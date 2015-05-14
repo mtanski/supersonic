@@ -25,6 +25,9 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #endif
+#ifdef __AVX2__
+
+#endif
 #include <algorithm>
 #include "supersonic/utils/std_namespace.h"
 
@@ -185,7 +188,66 @@ struct VectorBinaryPrimitive <operation_type,
   }
 };
 
-#ifdef __SSE2__
+
+#ifdef __AVX2__
+
+// Different simd operations (single precision, double precision, integer)
+// operate on different registers. SimdLoader is unified interface to
+// load/store data in right CPU register.
+template <typename DataType> struct SimdLoader;
+
+template <> struct SimdLoader<__m256i> {
+  __m256i LoadAligned(const void* arg) const {
+    return _mm256_load_si256(static_cast<const __m256i*>(arg));
+  };
+  void StoreAligned(const __m256i src, void* dst) const {
+    _mm256_store_si256(reinterpret_cast<__m256i*>(dst), src);
+  };
+};
+
+template <> struct SimdLoader<__m256> {
+  __m256 LoadAligned(const void* const arg) const {
+    return _mm256_load_ps(reinterpret_cast<const float*>(arg));
+  };
+  void StoreAligned(const __m256 src, void* dst) const {
+    _mm256_store_ps(reinterpret_cast<float*>(dst), src);
+  };
+};
+
+template <> struct SimdLoader<__m256d> {
+  __m256d LoadAligned(const void* const arg) const {
+    return _mm256_load_pd(reinterpret_cast<const double*>(arg));
+  };
+  void StoreAligned(const __m256d src, void* dst) const {
+    _mm256_store_pd(reinterpret_cast<double*>(dst), src);
+  };
+};
+
+template<OperatorId operation_type, typename DataCppType>
+void EvaluateSimd(const DataCppType* left, const DataCppType* right,
+                  const index_t size, DataCppType* result) {
+  typedef typename SimdTraits<operation_type, DataCppType>::simd_operator
+      SimdOperator;
+  typedef SimdLoader<typename SimdOperator::simd_arg> SimdLoaderType;
+  SimdOperator operation_simd;
+  SimdLoaderType simd_loader;
+
+  // AVX SIMD has no special aligment requirements
+
+  // AVX
+  const int step = sizeof(__m256) / sizeof(DataCppType);
+  DCHECK_EQ(0, size % step);
+
+  typename SimdOperator::simd_arg xmm1, xmm2, xmm3;
+  for (index_t i = 0; i < size; i += step) {
+    xmm1 = simd_loader.LoadAligned(left + i);
+    xmm2 = simd_loader.LoadAligned(right + i);
+    xmm3 = operation_simd(xmm1, xmm2);
+    simd_loader.StoreAligned(xmm3, result + i);
+  }
+}
+
+#elif __SSE2__
 
 // Different simd operations (single precision, double precision, integer)
 // operate on different registers. SimdLoader is unified interface to
@@ -229,11 +291,11 @@ void EvaluateSimd(const DataCppType* left, const DataCppType* right,
   SimdLoaderType simd_loader;
 
   // SIMD works if the vectors are aligned.
-  DCHECK_EQ(0, reinterpret_cast<uint64>(left) % 16);
-  DCHECK_EQ(0, reinterpret_cast<uint64>(right) % 16);
-  DCHECK_EQ(0, reinterpret_cast<uint64>(result) % 16);
+  DCHECK_EQ(0, reinterpret_cast<uint64>(left) % sizeof(__m128));
+  DCHECK_EQ(0, reinterpret_cast<uint64>(right) % sizeof(__m128));
+  DCHECK_EQ(0, reinterpret_cast<uint64>(result) % sizeof(__m128));
 
-  const int step = 16 / sizeof(DataCppType);
+  const int step = sizeof(__m128) / sizeof(DataCppType);
   DCHECK_EQ(0, size % step);
 
   typename SimdOperator::simd_arg xmm1, xmm2, xmm3;

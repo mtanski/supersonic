@@ -17,10 +17,16 @@
 #ifndef SUPERSONIC_EXPRESSION_VECTOR_SIMD_OPERATORS_H_
 #define SUPERSONIC_EXPRESSION_VECTOR_SIMD_OPERATORS_H_
 
+
 #ifdef __SSE2__
 #include <mmintrin.h>   // intrinsics for MMX instructions
 #include <xmmintrin.h>  // intrinsics for SSE instructions
 #include <emmintrin.h>  // intrinsics for SSE2 instructions
+#endif
+
+#ifdef __AVX2__
+#include <immintrin.h> // intrinsics for AVX2
+#endif
 
 namespace supersonic {
 namespace simd_operators {
@@ -34,6 +40,63 @@ namespace simd_operators {
       return simd_function(left, right);                                       \
     }                                                                          \
   };
+
+#ifdef __AVX2__
+
+// --------------------- Arithmetic --------------------------------------------
+
+template <typename LeftType, typename RightType> struct SimdPlus;
+SIMD_OPERATION(SimdPlus, int32,  __m256i, _mm256_add_epi32);  // ADD 8x32bit s/u
+SIMD_OPERATION(SimdPlus, uint32, __m256i, _mm256_add_epi32);  // ADD 8x32bit s/u
+SIMD_OPERATION(SimdPlus, int64,  __m256i, _mm256_add_epi64);  // ADD 4x64bit s/u
+SIMD_OPERATION(SimdPlus, uint64, __m256i, _mm256_add_epi64);  // ADD 4x64bit s/u
+SIMD_OPERATION(SimdPlus, float,  __m256,  _mm256_add_ps);     // ADD 8xfloats
+SIMD_OPERATION(SimdPlus, double, __m256d, _mm256_add_pd);     // ADD 4xdoubles
+
+template <typename LeftType, typename RightType> struct SimdSubtract;
+SIMD_OPERATION(SimdSubtract, int32,  __m256i, _mm256_sub_epi32);
+SIMD_OPERATION(SimdSubtract, uint32, __m256i, _mm256_sub_epi32);
+SIMD_OPERATION(SimdSubtract, int64,  __m256i, _mm256_sub_epi64);
+SIMD_OPERATION(SimdSubtract, uint64, __m256i, _mm256_sub_epi64);
+SIMD_OPERATION(SimdSubtract, float,  __m256 , _mm256_sub_ps);
+SIMD_OPERATION(SimdSubtract, double, __m256d, _mm256_sub_pd);
+
+template <typename LeftType, typename RightType> struct SimdMultiply;
+SIMD_OPERATION(SimdMultiply, float,  __m256 , _mm256_mul_ps);
+SIMD_OPERATION(SimdMultiply, double, __m256d, _mm256_mul_pd);
+
+template <typename LeftType, typename RightType> struct SimdDivide;
+SIMD_OPERATION(SimdDivide, float,  __m256 , _mm256_div_ps);
+SIMD_OPERATION(SimdDivide, double, __m256d, _mm256_div_pd);
+
+// ------------------------ Logical --------------------------------------------
+
+template <typename LeftType, typename RightType> struct SimdOr;
+SIMD_OPERATION(SimdOr, bool,   __m256i, _mm256_or_si256);  // Bitwise OR
+SIMD_OPERATION(SimdOr, int32,  __m256i, _mm256_or_si256);  // Bitwise OR
+SIMD_OPERATION(SimdOr, uint32, __m256i, _mm256_or_si256);  // Bitwise OR
+SIMD_OPERATION(SimdOr, int64,  __m256i, _mm256_or_si256);  // Bitwise OR
+SIMD_OPERATION(SimdOr, uint64, __m256i, _mm256_or_si256);  // Bitwise OR
+
+template <typename LeftType, typename RightType> struct SimdAnd;
+SIMD_OPERATION(SimdAnd, bool,   __m256i, __mm256_and_si256);  // Bitwise AND
+SIMD_OPERATION(SimdAnd, int32,  __m256i, __mm256_and_si256);  // Bitwise AND
+SIMD_OPERATION(SimdAnd, uint32, __m256i, __mm256_and_si256);  // Bitwise AND
+SIMD_OPERATION(SimdAnd, int64,  __m256i, __mm256_and_si256);  // Bitwise AND
+SIMD_OPERATION(SimdAnd, uint64, __m256i, __mm256_and_si256);  // Bitwise AND
+
+template <typename LeftType, typename RightType> struct SimdAndNot;
+SIMD_OPERATION(SimdAndNot, bool,   __m256i, _mm256_andnot_si256);
+SIMD_OPERATION(SimdAndNot, int32,  __m256i, _mm256_andnot_si256);
+SIMD_OPERATION(SimdAndNot, uint32, __m256i, _mm256_andnot_si256);
+SIMD_OPERATION(SimdAndNot, int64,  __m256i, _mm256_andnot_si256);
+SIMD_OPERATION(SimdAndNot, uint64, __m256i, _mm256_andnot_si256);
+
+template <typename LeftType, typename RightType> struct SimdXor;
+SIMD_OPERATION(SimdXor, bool, __m256i, _mm256_xor_si256);
+
+
+#elif __SSE2__
 
 // --------------------- Arithmetic --------------------------------------------
 
