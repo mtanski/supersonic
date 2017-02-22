@@ -42,9 +42,9 @@ supersonic/supersonic-config.h
 # Generated M4 macro
 aclocal.m4
 
-# Googletest
-gtest/
-
 # Protobuf generated files
 *.pb.h
 *.pb.cc
+
+# cmake build directory
+build/
