@@ -37,18 +37,18 @@ class MockLookupIndex : public LookupIndex {
       : schema_(schema),
         key_selector_(key_selector) {}
 
-  virtual FailureOrOwned<LookupIndexCursor> MultiLookup(
-      const View* query) const {
+  FailureOrOwned<LookupIndexCursor> MultiLookup(
+      const View* query) const override {
     THROW(new Exception(ERROR_UNKNOWN_ERROR, "Mock error"));
   }
 
-  virtual const TupleSchema& schema() const { return schema_; }
+  const TupleSchema& schema() const override { return schema_; }
 
-  virtual BoundSingleSourceProjector& key_selector() const {
+  BoundSingleSourceProjector& key_selector() const override {
     return *key_selector_.get();
   }
 
-  virtual bool empty() const { return false; }
+  bool empty() const override { return false; }
 
  private:
   TupleSchema schema_;

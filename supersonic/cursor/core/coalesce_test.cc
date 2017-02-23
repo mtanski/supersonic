@@ -41,7 +41,7 @@ class BoundCoalesceCursorTest : public ::testing::Test {
   static const int kAttributeCount = 4;
   static const int kRowCount = 16;
 
-  void SetUp() {
+  void SetUp() override {
     TestDataBuilder<INT32, INT32, INT32, INT32> builder;
 
     for (int i = 0; i < kRowCount; ++i) {

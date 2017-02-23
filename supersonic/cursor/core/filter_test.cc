@@ -20,6 +20,7 @@
 #include "supersonic/utils/std_namespace.h"
 #include <string>
 namespace supersonic {using std::string; }
+#include <utility>
 #include <vector>
 using std::vector;
 
@@ -49,7 +50,7 @@ using std::vector;
 
 namespace supersonic {
 
-class BoundFakePredicate : public BoundExpression {
+class BoundFakePredicate final : public BoundExpression {
  public:
   BoundFakePredicate(const vector<bool>& results,
                      const vector<bool>& null_results)
@@ -112,7 +113,7 @@ class BoundFakePredicate : public BoundExpression {
   rowid_t index_;
 };
 
-class FakePredicate : public Expression {
+class FakePredicate final : public Expression {
  public:
   FakePredicate(const vector<bool>& results, const vector<bool>& null_results)
       : results_(results),

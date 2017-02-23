@@ -41,7 +41,7 @@ class MockBufferAllocator : public BufferAllocator {
       : default_behaviour_(default_behaviour),
         internal_allocator_(allocator) {}
 
-  virtual ~MockBufferAllocator() {}
+  ~MockBufferAllocator() override = default;
 
 
   void set_default_behaviour(Behaviour behaviour) {
@@ -62,16 +62,16 @@ class MockBufferAllocator : public BufferAllocator {
   }
 
  private:
-  virtual Buffer* AllocateInternal(size_t requested,
+  Buffer* AllocateInternal(size_t requested,
                                    size_t minimal,
-                                   BufferAllocator* originator);
+                                   BufferAllocator* originator) override;
 
-  virtual bool ReallocateInternal(size_t requested,
+  bool ReallocateInternal(size_t requested,
                                   size_t minimal,
                                   Buffer* buffer,
-                                  BufferAllocator* originator);
+                                  BufferAllocator* originator) override;
 
-  virtual void FreeInternal(Buffer* buffer);
+  void FreeInternal(Buffer* buffer) override;
 
   // Helper function. Grants bytes memory into the returned buffer (via the
   // internal_allocator_), CHECKs for success.
@@ -110,7 +110,7 @@ class MemoryStatisticsCollectorMock
   MOCK_METHOD1(RefusedMemoryBytes, void(size_t bytes));
   MOCK_METHOD1(FreedMemoryBytes, void(size_t bytes));
   MOCK_METHOD0(Die, void());
-  virtual ~MemoryStatisticsCollectorMock() { Die(); }
+  ~MemoryStatisticsCollectorMock() override { Die(); }
 };
 
 }  // namespace supersonic

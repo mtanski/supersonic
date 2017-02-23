@@ -79,19 +79,19 @@ class Attribute {
   // Creates an attribute with specified options. For ENUM attributes, you
   // probably want to use the other constructor instead, as this one would
   // create empty ENUM.
-  Attribute(const string& name,
+  Attribute(string  name,
             const DataType type,
             const Nullability nullability)
-      : name_(name),
+      : name_(std::move(name)),
         type_(type),
         nullability_(nullability),
         enum_definition_() {}
 
   // Creates an ENUM attribute with the specified definition.
-  Attribute(const string& name,
+  Attribute(string  name,
             const EnumDefinition enum_definition,
             const Nullability nullability)
-      : name_(name),
+      : name_(std::move(name)),
         type_(ENUM),
         nullability_(nullability),
         enum_definition_(enum_definition) {}
@@ -128,13 +128,9 @@ class TupleSchema {
   class Rep {
    public:
     // Creates a new, empty schema (with no attributes).
-    Rep() {}
-
+    Rep() = default;
     // A copy constructor.
-    Rep(const Rep& other)
-        : attributes_(other.attributes_),
-          attribute_names_(other.attribute_names_) {}
-
+    Rep(const Rep& other) = default;
     int attribute_count() const { return attributes_.size(); }
 
     const Attribute& attribute(const int position) const {
@@ -178,11 +174,9 @@ class TupleSchema {
 
  public:
   // Creates a new, empty schema (with no attributes).
-  TupleSchema() : rep_(new Rep()) {}
-
+  TupleSchema() = default;
   // A copy constructor.
-  TupleSchema(const TupleSchema& other) : rep_(other.rep_) {}
-
+  TupleSchema(const TupleSchema& other) = default;
   // Returns the number of attributes.
   int attribute_count() const { return rep_->attribute_count(); }
 
@@ -282,7 +276,7 @@ class TupleSchema {
   }
 
  private:
-  shared_ptr<Rep> rep_;
+  shared_ptr<Rep> rep_ = std::make_shared<Rep>();
 };
 
 }  // namespace supersonic

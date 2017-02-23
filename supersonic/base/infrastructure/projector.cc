@@ -125,8 +125,8 @@ class RenamingProjector : public SingleSourceProjector {
                                                                 aliases, ", ");
   }
 
-  virtual FailureOrOwned<const BoundSingleSourceProjector> Bind(
-      const TupleSchema& input_schema) const {
+  FailureOrOwned<const BoundSingleSourceProjector> Bind(
+      const TupleSchema& input_schema) const override {
     FailureOrOwned<const BoundSingleSourceProjector> bound =
         source_->Bind(input_schema);
     PROPAGATE_ON_FAILURE(bound);
@@ -151,12 +151,12 @@ class RenamingProjector : public SingleSourceProjector {
     return Success(result_projector.release());
   }
 
-  virtual RenamingProjector* Clone() const {
+  RenamingProjector* Clone() const override {
     return new RenamingProjector(aliases_, source_->Clone());
   }
 
   // (result_projection) RENAME AS (name1, name2, name3)
-  virtual string ToString(bool verbose) const;
+  string ToString(bool verbose) const override;
 
  private:
   const vector<string> aliases_;
@@ -166,7 +166,7 @@ class RenamingProjector : public SingleSourceProjector {
 string RenamingProjector::ToString(bool verbose) const {
   string result_description = StringPrintf("(%s) RENAME AS (",
                                            source_->ToString(verbose).c_str());
-  for (vector<string>::const_iterator it = aliases_.begin();
+  for (auto it = aliases_.begin();
       it < aliases_.end(); ++it) {
     if (it != aliases_.begin()) result_description.append(", ");
     result_description.append(*it);
@@ -180,8 +180,8 @@ class PositionedAttributeProjector : public SingleSourceProjector {
   explicit PositionedAttributeProjector(const int source_position)
       : source_position_(source_position) {}
 
-  virtual FailureOrOwned<const BoundSingleSourceProjector> Bind(
-      const TupleSchema& source_schema) const {
+  FailureOrOwned<const BoundSingleSourceProjector> Bind(
+      const TupleSchema& source_schema) const override {
     if (source_position_ >= source_schema.attribute_count()) {
       THROW(new Exception(
           ERROR_ATTRIBUTE_COUNT_MISMATCH,
@@ -195,11 +195,11 @@ class PositionedAttributeProjector : public SingleSourceProjector {
     return Success(projector.release());
   }
 
-  virtual PositionedAttributeProjector* Clone() const {
+  PositionedAttributeProjector* Clone() const override {
     return new PositionedAttributeProjector(source_position_);
   }
 
-  virtual string ToString(bool verbose) const {
+  string ToString(bool verbose) const override {
     return StringPrintf("AttributeAt(%d)", source_position_);
   }
 
@@ -214,9 +214,9 @@ class AllAttributesProjector : public SingleSourceProjector {
   explicit AllAttributesProjector(const StringPiece& prefix) :
       prefix_(prefix.ToString()) {}
 
-  virtual FailureOrOwned<const BoundSingleSourceProjector> Bind(
-      const TupleSchema& source_schema) const {
-    BoundSingleSourceProjector* result =
+  FailureOrOwned<const BoundSingleSourceProjector> Bind(
+      const TupleSchema& source_schema) const override {
+    auto* result =
         new BoundSingleSourceProjector(source_schema);
     for (int i = 0; i < source_schema.attribute_count(); ++i) {
       if (prefix_.empty()) {
@@ -230,11 +230,11 @@ class AllAttributesProjector : public SingleSourceProjector {
     return Success(result);
   }
 
-  virtual AllAttributesProjector* Clone() const {
+  AllAttributesProjector* Clone() const override {
     return new AllAttributesProjector(prefix_);
   }
 
-  virtual string ToString(bool verbose) const {
+  string ToString(bool verbose) const override {
     return StrCat(prefix_, "*");
   }
 
@@ -249,9 +249,9 @@ CompoundSingleSourceProjector::Bind(
     const TupleSchema& source_schema) const {
   scoped_ptr<BoundSingleSourceProjector> projector(
       new BoundSingleSourceProjector(source_schema));
-  for (int i = 0; i < projectors_.size(); ++i) {
+  for (const auto & i : projectors_) {
     FailureOrOwned<const BoundSingleSourceProjector> component =
-        projectors_[i]->Bind(source_schema);
+        i->Bind(source_schema);
     PROPAGATE_ON_FAILURE(component);
     for (int j = 0; j < component->result_schema().attribute_count();
          ++j) {
@@ -272,17 +272,16 @@ CompoundSingleSourceProjector::Bind(
 }
 
 CompoundSingleSourceProjector* CompoundSingleSourceProjector::Clone() const {
-  CompoundSingleSourceProjector* clone = new CompoundSingleSourceProjector();
-  for (vector<linked_ptr<const SingleSourceProjector> >::const_iterator i =
-       projectors_.begin(); i != projectors_.end(); ++i) {
-    clone->add((*i)->Clone());
+  auto* clone = new CompoundSingleSourceProjector();
+  for (const auto & projector : projectors_) {
+    clone->add(projector->Clone());
   }
   return clone;
 }
 
 string CompoundSingleSourceProjector::ToString(bool verbose) const {
   string result_description = "(";
-  for (vector<linked_ptr<const SingleSourceProjector> >::const_iterator it
+  for (auto it
           = projectors_.begin(); it < projectors_.end(); ++it) {
     if (it != projectors_.begin()) result_description.append(", ");
     result_description.append((*it)->ToString(verbose));
@@ -308,17 +307,17 @@ const SingleSourceProjector* ProjectAttributeAt(const int position) {
 const SingleSourceProjector* ProjectAttributesAt(const vector<int>& positions) {
   scoped_ptr<CompoundSingleSourceProjector> projector(
       new CompoundSingleSourceProjector);
-  for (int i = 0; i < positions.size(); ++i) {
-    projector->add(ProjectAttributeAt(positions[i]));
+  for (int position : positions) {
+    projector->add(ProjectAttributeAt(position));
   }
   return projector.release();
 }
 
 const SingleSourceProjector* ProjectNamedAttributes(
     const vector<string>& names) {
-  CompoundSingleSourceProjector* projector = new CompoundSingleSourceProjector;
-  for (int i = 0; i < names.size(); ++i) {
-    projector->add(ProjectNamedAttribute(names[i]));
+  auto* projector = new CompoundSingleSourceProjector;
+  for (const auto & name : names) {
+    projector->add(ProjectNamedAttribute(name));
   }
   return projector;
 }
@@ -336,15 +335,15 @@ CompoundMultiSourceProjector::Bind(
     const vector<const TupleSchema*>& source_schemas) const {
   scoped_ptr<BoundMultiSourceProjector> projector(
       new BoundMultiSourceProjector(source_schemas));
-  for (int i = 0; i < projectors_.size(); ++i) {
+  for (const auto & i : projectors_) {
     FailureOrOwned<const BoundSingleSourceProjector> component =
-        projectors_[i].second->Bind(*source_schemas[projectors_[i].first]);
+        i.second->Bind(*source_schemas[i.first]);
     PROPAGATE_ON_FAILURE(component);
 
     for (int j = 0; j < component->result_schema().attribute_count();
          ++j) {
       if (!projector->AddAs(
-              projectors_[i].first,
+              i.first,
               component->source_attribute_position(j),
               component->result_schema().attribute(j).name())) {
         THROW(new Exception(

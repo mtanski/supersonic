@@ -35,8 +35,8 @@ namespace {
 
 using util::gtl::PointerVector;
 
-typedef CursorWithBenchmarkListener Entry;
-typedef CursorTransformerWithBenchmarkHistory Transformer;
+using Entry = supersonic::CursorWithBenchmarkListener;
+using Transformer = CursorTransformerWithBenchmarkHistory;
 
 // Function which resolves the cursor's benchmarking type based on its id.
 BenchmarkType GetBenchmarkType(const Cursor& cursor) {
@@ -146,7 +146,7 @@ BenchmarkTreeNode* BenchmarkTreeBuilder::ConstructNodeForCursor(
     bool is_parallel_descendant) {
   std::unique_ptr<CursorStatistics> stats(CreateStatsForCursor(
       node_out_entry, node_in_entries,
-      is_root || is_parallel_descendant ? NULL : root_node_stats_));
+      is_root || is_parallel_descendant ? nullptr : root_node_stats_));
 
   if (is_root) {
     stats->InitRoot();
@@ -184,7 +184,7 @@ BenchmarkResult* BenchmarkTreeBuilder::CreateTree(Cursor* cursor) {
   return new BenchmarkResult(result_node.release(), wrapped_cursor.release());
 }
 
-typedef vector<Entry*>::iterator entry_iterator;
+using entry_iterator = vector<Entry *>::iterator;
 
 BenchmarkTreeNode* BenchmarkTreeBuilder::CreateTreeNode(
     Entry* current_output,
@@ -207,9 +207,8 @@ BenchmarkTreeNode* BenchmarkTreeBuilder::CreateTreeNode(
 
   bool parallel_cursor =
       GetBenchmarkType(*current_output->cursor()) == PARALLEL;
-  for (entry_iterator entry = history.begin(); entry != history.end();
-       ++entry) {
-    node->AddChild(CreateTreeNode(*entry,
+  for (auto &entry: history) {
+    node->AddChild(CreateTreeNode(entry,
                                   transformer,
                                   /* is root? */ false,
                                   is_parallel_descendant || parallel_cursor));
@@ -217,7 +216,7 @@ BenchmarkTreeNode* BenchmarkTreeBuilder::CreateTreeNode(
   return node;
 }
 
-typedef PointerVector<Entry>::iterator entry_ptr_iterator;
+using entry_ptr_iterator = PointerVector<Entry>::iterator;
 
 void BenchmarkTreeBuilder::RecoverHistory(Transformer* transformer,
                                           vector<Entry*>* output_history) {
@@ -225,9 +224,8 @@ void BenchmarkTreeBuilder::RecoverHistory(Transformer* transformer,
 
   // Transfer ownership of all Entry objects to the BenchmarkTreeBuilder class
   // and populate the output_history vector.
-  for (entry_ptr_iterator ptr_to_entry = history->begin();
-       ptr_to_entry != history->end(); ++ptr_to_entry) {
-    entries_.push_back(ptr_to_entry->release());
+  for (auto &ptr_to_entry: *history) {
+    entries_.push_back(ptr_to_entry.release());
     output_history->push_back(entries_.back().get());
   }
 }

@@ -19,6 +19,7 @@
 #include "supersonic/benchmark/dot/dot_drawer.h"
 
 #include <memory>
+#include <utility>
 
 #include "supersonic/benchmark/proto/benchmark.pb.h"
 #include "supersonic/benchmark/infrastructure/cursor_statistics.h"
@@ -157,7 +158,7 @@ void PopulateNodeData(const BenchmarkData& data,
                                   relative_time));
   }
 
-  if (valid_processing_time != NULL) {
+  if (valid_processing_time != nullptr) {
     *valid_processing_time =
         data.has_processing_time() && data.processing_time() > 0;
   }
@@ -254,8 +255,7 @@ void DOTDrawer::DrawDOT(const BenchmarkTreeNode& node) {
   already_used_ = true;
 }
 
-typedef PointerVector<BenchmarkTreeNode>::const_iterator
-    const_node_iterator;
+using const_node_iterator = PointerVector<BenchmarkTreeNode>::const_iterator;
 
 void DOTDrawer::DrawBenchmarkSubtree(
     const BenchmarkTreeNode& node,
@@ -290,9 +290,8 @@ void DOTDrawer::DrawBenchmarkSubtree(
 
   const PointerVector<BenchmarkTreeNode>& children = node.GetChildren();
 
-  for (const_node_iterator child = children.begin();
-       child != children.end(); ++child) {
-    DrawBenchmarkSubtree(*(child->get()), draw_node ? node_name : parent_name);
+  for (const auto &child: children) {
+    DrawBenchmarkSubtree(*(child.get()), draw_node ? node_name : parent_name);
   }
 }
 
@@ -325,7 +324,7 @@ namespace {
 // DOTOutputWriter implementations.
 
 // --------------------------- StringOutputWriter ------------------------------
-class StringOutputWriter : public DOTOutputWriter {
+class StringOutputWriter final : public DOTOutputWriter {
  public:
   // Does not take ownership of the string argument.
   explicit StringOutputWriter(string* dot_output)
@@ -343,11 +342,11 @@ void StringOutputWriter::WriteDOT(const string& dot) {
 }
 
 // ---------------------------- FileOutputWriter -------------------------------
-class FileOutputWriter : public DOTOutputWriter {
+class FileOutputWriter final : public DOTOutputWriter {
  public:
-  explicit FileOutputWriter(const string& file_name)
+  explicit FileOutputWriter(string file_name)
       : DOTOutputWriter(),
-        file_name_(file_name) {}
+        file_name_(std::move(file_name)) {}
 
   virtual void WriteDOT(const string& dot);
 

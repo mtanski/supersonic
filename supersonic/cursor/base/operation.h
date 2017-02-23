@@ -34,7 +34,7 @@ class BufferAllocator;
 
 class Operation {
  public:
-  virtual ~Operation() {}
+  virtual ~Operation() = default;
 
   // Sets an allocator to be used by subsequent invocations of CreateCursor().
   // Ownership of the allocator remains with the caller. The allocator must
@@ -75,7 +75,7 @@ class Operation {
 
  protected:
   // To allow instantiation in subclasses.
-  Operation() {}
+  Operation() = default;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Operation);

@@ -35,7 +35,7 @@ class BufferAllocator;
 
 namespace {
 
-class ComputeCursor : public BasicCursor {
+class ComputeCursor final : public BasicCursor {
  public:
   ComputeCursor(BoundExpressionTree* computation,
                 rowcount_t row_capacity,
@@ -65,7 +65,7 @@ class ComputeCursor : public BasicCursor {
   DISALLOW_COPY_AND_ASSIGN(ComputeCursor);
 };
 
-class ComputeOperation : public BasicOperation {
+class ComputeOperation final : public BasicOperation {
  public:
   ComputeOperation(const Expression* computation, Operation* child)
       : BasicOperation(child),

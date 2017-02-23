@@ -48,13 +48,13 @@ class TupleSchema;
 
 class BasicBoundExpression : public BoundExpression {
  public:
-  ~BasicBoundExpression() {}
+  ~BasicBoundExpression() override = default;
 
   // Must be called before the expression is first evaluated (normally during
   // binding).
   FailureOrVoid Init(rowcount_t row_capacity, BufferAllocator* allocator);
 
-  virtual rowcount_t row_capacity() const {
+  rowcount_t row_capacity() const override {
     return my_const_block()->row_capacity();
   };
 
@@ -89,7 +89,7 @@ class BasicBoundNoArgumentExpression : public BasicBoundExpression {
 
   // This may be surprising. But we do not want to resolve constant expressions
   // - as we resolve to constant expressions this would cause an infinite loop.
-  bool can_be_resolved() const { return false; }
+  bool can_be_resolved() const override { return false; }
 
   virtual void CollectReferredAttributeNames(
         set<string>* referred_attribute_names) const {}
@@ -105,14 +105,14 @@ class BasicBoundConstExpression : public BasicBoundNoArgumentExpression {
       : BasicBoundNoArgumentExpression(result_schema, allocator) {}
 
   // Returns a pre-initialized pointer.
-  virtual EvaluationResult DoEvaluate(const View& input,
-                                      const BoolView& skip_vectors) {
+  EvaluationResult DoEvaluate(const View& input,
+                                      const BoolView& skip_vectors) override {
     DCHECK_LE(input.row_count(), my_block()->row_capacity());
     my_view()->set_row_count(input.row_count());
     return Success(*my_view());
   }
 
-  bool is_constant() const { return true; }
+  bool is_constant() const override { return true; }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BasicBoundConstExpression);
@@ -126,13 +126,13 @@ class BoundUnaryExpression : public BasicBoundExpression {
                        BufferAllocator* allocator,
                        BoundExpression* arg,
                        const DataType expected_arg_type);
-  virtual ~BoundUnaryExpression() {}
+  ~BoundUnaryExpression() override = default;
 
-  virtual rowcount_t row_capacity() const {
+  rowcount_t row_capacity() const override {
     return std::min(my_const_block()->row_capacity(), arg_->row_capacity());
   }
 
-  virtual bool can_be_resolved() const { return argument()->is_constant(); }
+  bool can_be_resolved() const override { return argument()->is_constant(); }
 
   virtual void CollectReferredAttributeNames(
         set<string>* referred_attribute_names) const {
@@ -157,14 +157,14 @@ class BoundBinaryExpression : public BasicBoundExpression {
                        const DataType expected_left_type,
                        BoundExpression* right,
                        const DataType expected_right_type);
-  virtual ~BoundBinaryExpression() {}
+  ~BoundBinaryExpression() override = default;
 
-  virtual rowcount_t row_capacity() const {
+  rowcount_t row_capacity() const override {
     return std::min(std::min(left_->row_capacity(), right_->row_capacity()),
                     my_const_block()->row_capacity());
   }
 
-  virtual bool can_be_resolved() const {
+  bool can_be_resolved() const override {
     return left()->is_constant() && right()->is_constant();
   }
 
@@ -196,15 +196,15 @@ class BoundTernaryExpression : public BasicBoundExpression {
                          const DataType middle_type,
                          BoundExpression* right,
                          const DataType right_type);
-  virtual ~BoundTernaryExpression() {}
+  ~BoundTernaryExpression() override = default;
 
-  virtual rowcount_t row_capacity() const {
+  rowcount_t row_capacity() const override {
     return std::min(std::min(my_const_block()->row_capacity(),
                              left_->row_capacity()),
                     std::min(middle_->row_capacity(), right_->row_capacity()));
   }
 
-  virtual bool can_be_resolved() const {
+  bool can_be_resolved() const override {
     return left_->is_constant() && middle_->is_constant()
         && right_->is_constant();
   }

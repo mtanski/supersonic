@@ -17,7 +17,7 @@
 
 #include "supersonic/cursor/core/generate.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include "supersonic/utils/macros.h"
 #include "supersonic/utils/exception/failureor.h"
@@ -34,7 +34,7 @@ class Operation;
 
 namespace {
 
-class GenerateOperation : public BasicOperation {
+class GenerateOperation final : public BasicOperation {
  public:
   explicit GenerateOperation(rowcount_t count) : count_(count) {}
 
@@ -50,7 +50,7 @@ class GenerateOperation : public BasicOperation {
   DISALLOW_COPY_AND_ASSIGN(GenerateOperation);
 };
 
-class GenerateCursor : public BasicCursor {
+class GenerateCursor final : public BasicCursor {
  public:
   explicit GenerateCursor(rowcount_t count)
       : BasicCursor(TupleSchema()),

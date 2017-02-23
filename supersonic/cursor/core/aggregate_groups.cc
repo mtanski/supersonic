@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
+#include <cstddef>
 #include <algorithm>
 #include "supersonic/utils/std_namespace.h"
 #include <list>
@@ -68,7 +68,7 @@ namespace {
 // Creates and updates a block of unique keys that are the result of grouping.
 class GroupKeySet {
  public:
-  typedef row_hash_set::FindResult FindResult;  // Re-exporting.
+  using FindResult = row_hash_set::FindResult;  // Re-exporting.
 
   // Creates a GroupKeySet. group_by_columns describes which columns constitute
   // a key and should be grouped together, it can be empty, in which case all
@@ -202,7 +202,7 @@ class GroupAggregateCursor : public BasicCursor {
                                  child_owner.release()));
   }
 
-  virtual ResultView Next(rowcount_t max_row_count) {
+  ResultView Next(rowcount_t max_row_count) override {
     while (true) {
       if (result_.next(max_row_count)) {
         return ResultView::Success(&result_.view());
@@ -234,17 +234,17 @@ class GroupAggregateCursor : public BasicCursor {
     return result_.truncate(0);
   }
 
-  virtual bool IsWaitingOnBarrierSupported() const {
+  bool IsWaitingOnBarrierSupported() const override {
     return child_.is_waiting_on_barrier_supported();
   }
 
-  virtual void Interrupt() { child_.Interrupt(); }
+  void Interrupt() override { child_.Interrupt(); }
 
-  virtual void ApplyToChildren(CursorTransformer* transformer) {
+  void ApplyToChildren(CursorTransformer* transformer) override {
     child_.ApplyToCursor(transformer);
   }
 
-  virtual CursorId GetCursorId() const {
+  CursorId GetCursorId() const override {
     return best_effort_
            ? BEST_EFFORT_GROUP_AGGREGATE
            : GROUP_AGGREGATE;
@@ -445,11 +445,11 @@ class GroupAggregateOperation : public BasicOperation {
         group_by_(group_by),
         aggregation_specification_(aggregation),
         best_effort_(best_effort),
-        options_(options != NULL ? options : new GroupAggregateOptions()) {}
+        options_(options != nullptr ? options : new GroupAggregateOptions()) {}
 
-  virtual ~GroupAggregateOperation() {}
+  ~GroupAggregateOperation() override = default;
 
-  virtual FailureOrOwned<Cursor> CreateCursor() const {
+  FailureOrOwned<Cursor> CreateCursor() const override {
     FailureOrOwned<Cursor> child_cursor = child()->CreateCursor();
     PROPAGATE_ON_FAILURE(child_cursor);
 
@@ -820,8 +820,8 @@ class HybridGroupFinalAggregationCursor : public BasicCursor {
         pregroup_cursor_(pregroup_cursor) {
   }
 
-  virtual ResultView Next(rowcount_t max_row_count) {
-    if (result_cursor_ == NULL && sorter_ == NULL) {
+  ResultView Next(rowcount_t max_row_count) override {
+    if (result_cursor_ == nullptr && sorter_ == nullptr) {
       ResultView first_result = pregroup_cursor_->Next(
           numeric_limits<rowcount_t>::max());
       if (first_result.is_eos() || !first_result.has_data()) {
@@ -858,7 +858,7 @@ class HybridGroupFinalAggregationCursor : public BasicCursor {
             allocator_));
       }
     }
-    if (result_cursor_ == NULL && sorter_ != NULL) {
+    if (result_cursor_ == nullptr && sorter_ != nullptr) {
       while (true) {
         ResultView result = pregroup_cursor_->Next(
             numeric_limits<rowcount_t>::max());
@@ -911,29 +911,29 @@ class HybridGroupFinalAggregationCursor : public BasicCursor {
       PROPAGATE_ON_FAILURE(aggregated);
       PROPAGATE_ON_FAILURE(SetResultCursor(aggregated.release()));
     }
-    CHECK(sorter_ == NULL);
-    CHECK(result_cursor_ != NULL);
+    CHECK(sorter_ == nullptr);
+    CHECK(result_cursor_ != nullptr);
     ResultView result = result_cursor_->Next(max_row_count);
     PROPAGATE_ON_FAILURE(result);
     return result;
   }
 
-  virtual bool IsWaitingOnBarrierSupported() const {
+  bool IsWaitingOnBarrierSupported() const override {
     return is_waiting_on_barrier_supported_;
   }
 
-  virtual void Interrupt() {
+  void Interrupt() override {
     Cursor* pregroup_cursor = pregroup_cursor_.get();
-    if (pregroup_cursor != NULL) {
+    if (pregroup_cursor != nullptr) {
       pregroup_cursor->Interrupt();
     }
     Cursor* result_cursor = result_cursor_.get();
-    if (result_cursor != NULL) {
+    if (result_cursor != nullptr) {
       result_cursor->Interrupt();
     }
   }
 
-  virtual CursorId GetCursorId() const {
+  CursorId GetCursorId() const override {
     return HYBRID_GROUP_FINAL_AGGREGATION;
   }
 
@@ -943,7 +943,7 @@ class HybridGroupFinalAggregationCursor : public BasicCursor {
   // cursor, as it conflicts with the return type of Transform().
   // The hybrid aggregate and pregroup aggregate cursor are treated as one
   // by cursor transformers.
-  virtual void ApplyToChildren(CursorTransformer* transformer) {
+  void ApplyToChildren(CursorTransformer* transformer) override {
     pregroup_cursor_->ApplyToChildren(transformer);
   }
 
@@ -1023,7 +1023,7 @@ FailureOrOwned<Cursor> BoundGroupAggregateWithLimit(
   FailureOrOwned<GroupAggregateCursor> result =
       GroupAggregateCursor::Create(
           group_by, aggregator, allocator,
-          original_allocator == NULL ? allocator : original_allocator,
+          original_allocator == nullptr ? allocator : original_allocator,
           best_effort, max_unique_keys_in_result, child);
   PROPAGATE_ON_FAILURE(result);
   return Success(result.release());
@@ -1050,7 +1050,7 @@ FailureOrOwned<Cursor> BoundHybridGroupAggregate(
   FailureOrOwned<Cursor> transformed_input(
       hybrid_group_setup->TransformInput(allocator, child_owner.release()));
   PROPAGATE_ON_FAILURE(transformed_input);
-  if (debug_options_owned != NULL &&
+  if (debug_options_owned != nullptr &&
       debug_options_owned->return_transformed_input()) {
     return transformed_input;
   }
@@ -1120,9 +1120,9 @@ class HybridGroupAggregateOperation : public BasicOperation {
         memory_quota_(memory_quota),
         temporary_directory_prefix_(temporary_directory_prefix.ToString()) {}
 
-  virtual ~HybridGroupAggregateOperation() {}
+  ~HybridGroupAggregateOperation() override = default;
 
-  virtual FailureOrOwned<Cursor> CreateCursor() const {
+  FailureOrOwned<Cursor> CreateCursor() const override {
     FailureOrOwned<Cursor> child_cursor = child()->CreateCursor();
     PROPAGATE_ON_FAILURE(child_cursor);
     return BoundHybridGroupAggregate(
@@ -1131,7 +1131,7 @@ class HybridGroupAggregateOperation : public BasicOperation {
         temporary_directory_prefix_,
         buffer_allocator(),
         memory_quota_,
-        NULL,
+        nullptr,
         child_cursor.release());
   }
 

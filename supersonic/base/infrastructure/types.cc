@@ -49,7 +49,7 @@ class TypeInfoResolver {
  public:
   const TypeInfo& GetTypeInfo(DataType type) {
     const TypeInfo* type_info = mapping_[type].get();
-    CHECK(type_info != NULL);
+    CHECK(type_info != nullptr);
     return *type_info;
   }
 

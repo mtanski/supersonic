@@ -29,8 +29,8 @@
 #ifndef SUPERSONIC_BASE_INFRASTRUCTURE_AGGREGATION_OPERATORS_H_
 #define SUPERSONIC_BASE_INFRASTRUCTURE_AGGREGATION_OPERATORS_H_
 
-#include <stddef.h>
-#include <string.h>
+#include <cstddef>
+#include <cstring>
 
 #include <algorithm>
 #include "supersonic/utils/std_namespace.h"
@@ -246,20 +246,20 @@ struct AggregationOperator<CONCAT, InputType, STRING, deep_copy> {
                          std::unique_ptr<Buffer>* buffer_ptr) {
     Buffer* buffer = buffer_ptr->get();
     // If the buffer is NULL, we expect the string passed in to be empty.
-    DCHECK(buffer != NULL || result->length() == 0);
+    DCHECK(buffer != nullptr || result->length() == 0);
     // If the result is not NULL, we expect the string passed in to be stored in
     // the buffer.
-    DCHECK(buffer == NULL || buffer->data() == result->data());
+    DCHECK(buffer == nullptr || buffer->data() == result->data());
     size_t current_string_length = result->length();
     AsString<InputType> as_string;
     StringPiece val_string = as_string(val);
     // Make sure the buffer is large enough to hold old result, char ',' and the
     // val converted to string.
     size_t concat_result_size = current_string_length + val_string.length() + 1;
-    if (buffer == NULL) {
+    if (buffer == nullptr) {
       buffer = allocator_->BestEffortAllocate(2 * concat_result_size,
                                               concat_result_size);
-      if (buffer == NULL) return false;
+      if (buffer == nullptr) return false;
       buffer_ptr->reset(buffer);
     }
     if (concat_result_size > buffer->size()) {
@@ -271,7 +271,7 @@ struct AggregationOperator<CONCAT, InputType, STRING, deep_copy> {
         return false;
       }
     }
-    DCHECK(buffer != NULL);
+    DCHECK(buffer != nullptr);
     static_cast<char*>(buffer->data())[current_string_length] = ',';
     if (val_string.length()) {
       memcpy(static_cast<char*>(buffer->data()) + current_string_length + 1,

@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 namespace supersonic {using std::string; }
 
 #include "supersonic/utils/macros.h"
@@ -35,8 +36,8 @@ class BenchmarkTreeNode;
 // of dispatching the diagram to its destination.
 class DOTOutputWriter {
  public:
-  DOTOutputWriter() {}
-  virtual ~DOTOutputWriter() {}
+  DOTOutputWriter() = default;
+  virtual ~DOTOutputWriter() = default;
 
   // Writes the argument dot graph to the output defined by the class's
   // implementation.
@@ -57,9 +58,9 @@ class DOTDrawer {
   static const char* kGlobalStatsNodeName;
 
   // Takes ownership of the writer.
-  explicit DOTDrawer(DOTOutputWriter* dot_writer, const string& benchmark_name)
+  explicit DOTDrawer(DOTOutputWriter* dot_writer, string benchmark_name)
       : dot_writer_(dot_writer),
-        benchmark_name_(benchmark_name),
+        benchmark_name_(std::move(benchmark_name)),
         node_counter_(0),
         already_used_(false) {}
 

@@ -17,7 +17,7 @@
 
 #include "supersonic/base/infrastructure/copy_column.h"
 
-#include <string.h>
+#include <cstring>
 
 #include <string>
 namespace supersonic {using std::string; }
@@ -75,7 +75,7 @@ struct IsNullCopier<BOOL_NONE_DCHECK, deep_copy> {
                   const bool* source, bool* destination,
                   const rowid_t* selection) {
 #ifndef NDEBUG
-    if (selection != NULL) {
+    if (selection != nullptr) {
       for (int i = 0; i < row_count; ++i) { DCHECK(!source[selection[i]]); }
     } else {
       for (int i = 0; i < row_count; ++i) { DCHECK(!source[i]); }
@@ -89,7 +89,7 @@ struct IsNullCopier<BOOL_MEMCPY, deep_copy> {
   void operator()(const rowcount_t row_count,
                   const bool* source, bool* destination,
                   const rowid_t* selection) {
-    if (source != NULL) {
+    if (source != nullptr) {
       memcpy(destination, source, row_count * sizeof(*destination));
     } else {
       // The contract allows NULL vector to be missing even if the schema is
@@ -113,7 +113,7 @@ struct IsNullCopier<BOOL_LOOP_COPY_SELECTION, deep_copy> {
   void operator()(const rowcount_t row_count,
                   const bool* source, bool* destination,
                   const rowid_t* selection) {
-    if (source != NULL) {
+    if (source != nullptr) {
       for (rowid_t i = 0; i < row_count; ++i) {
         destination[i] = (selection[i] < 0 || source[selection[i]]);
       }
@@ -149,7 +149,7 @@ struct DataCopier<DATA_MEMCPY, type, deep_copy> {
                         const rowid_t* selection,
                         const bool* skip_vector,
                         Arena* arena) {
-    DCHECK(selection == NULL);
+    DCHECK(selection == nullptr);
     DCHECK(!deep_copy || !TypeTraits<type>::is_variable_length);
     memcpy(destination, source, row_count * TypeTraits<type>::size);
     return row_count;
@@ -165,7 +165,7 @@ struct DataCopier<DATA_LOOP_COPY, type, deep_copy> {
       const rowid_t* selection,
       const bool* skip_vector,
       Arena* arena) {
-    DCHECK(selection == NULL);
+    DCHECK(selection == nullptr);
     DatumCopy<type, deep_copy> copier;
     for (int i = 0; i < row_count; ++i) {
       if (!copier(*source++, destination++, arena)) return i;
@@ -183,7 +183,7 @@ struct DataCopier<DATA_LOOP_COPY_SKIP_VECTOR, type, deep_copy> {
       const rowid_t* selection,
       const bool* skip_vector,
       Arena* arena) {
-    DCHECK(selection == NULL);
+    DCHECK(selection == nullptr);
     DatumCopy<type, deep_copy> copier;
     for (int i = 0; i < row_count; ++i) {
       if (!*skip_vector++) {
@@ -205,7 +205,7 @@ struct DataCopier<DATA_LOOP_COPY_SELECTION, type, deep_copy> {
       const rowid_t* selection,
       const bool* skip_vector,
       Arena* arena) {
-    DCHECK(selection != NULL);
+    DCHECK(selection != nullptr);
     DatumCopy<type, deep_copy> copier;
     for (int i = 0; i < row_count; ++i) {
       if (selection[i] >= 0) {
@@ -226,7 +226,7 @@ struct DataCopier<DATA_LOOP_COPY_SELECTION_SKIP_VECTOR, type, deep_copy> {
       const rowid_t* selection,
       const bool* skip_vector,
       Arena* arena) {
-    DCHECK(selection != NULL);
+    DCHECK(selection != nullptr);
     DatumCopy<type, deep_copy> copier;
     for (int i = 0; i < row_count; ++i) {
       if (!*skip_vector++ && selection[i] >= 0) {
@@ -250,7 +250,7 @@ bool* GetDestinationIsNull(OwnedColumn* destination,
 template<>
 bool* GetDestinationIsNull<BOOL_NONE>(OwnedColumn* destination,
                                       rowcount_t destination_offset) {
-  return NULL;
+  return nullptr;
 }
 
 // Puts together the copiers for data and is_null columns. Conforms to the
@@ -266,10 +266,10 @@ rowcount_t ColumnCopierFn(const rowcount_t row_count,
                           const rowcount_t destination_offset,
                           OwnedColumn* const destination) {
   DCHECK_EQ(type, source.type_info().type());
-  DCHECK(source.typed_data<type>() != NULL)
+  DCHECK(source.typed_data<type>() != nullptr)
       << "Source data " << source.attribute().name()
       << " is NULL; can't copy";
-  DCHECK(destination->mutable_typed_data<type>() != NULL)
+  DCHECK(destination->mutable_typed_data<type>() != nullptr)
       << "Output buffer for " << destination->content().attribute().name()
       << " is NULL; can't copy";
 
@@ -336,7 +336,7 @@ struct CopyColumnResolver {
     }
     LOG(FATAL) << "Unhandled case";
     // Opensource compilers does not recognize LOG(FATAL) as terminal.
-    return NULL;
+    return nullptr;
   }
 
   template<DataType type, IsNullCopierType is_null_copier_type_p,

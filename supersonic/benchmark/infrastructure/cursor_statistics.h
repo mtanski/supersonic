@@ -33,7 +33,7 @@ namespace supersonic {
 // cursors.
 class CursorStatistics {
  public:
-  virtual ~CursorStatistics() {}
+  virtual ~CursorStatistics() = default;
 
   // Abstract method for gathering data from listeners. Depending on the
   // statistics type it will use a different logic to aggregate the information

@@ -26,7 +26,7 @@ namespace supersonic {
 
 class ProjectorTest : public testing::Test {
  public:
-  void SetUp() {
+  void SetUp() override {
     schema_0_.add_attribute(Attribute("schema 0 attribute 0", INT64, NULLABLE));
     schema_0_.add_attribute(Attribute("schema 0 attribute 1", STRING,
                                       NULLABLE));

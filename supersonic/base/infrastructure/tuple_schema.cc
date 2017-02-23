@@ -40,7 +40,7 @@ FailureOrVoid EnumDefinition::Rep::Add(const int32 number, StringPiece name) {
                "(with value \"", number_to_name_[number], "\")")));
   }
   const char* content = arena_.AddStringPieceContent(name);
-  if (content == NULL) {
+  if (content == nullptr) {
     THROW(new Exception(
         ERROR_MEMORY_EXCEEDED,
         "Can't allocate memory for enum definition"));
@@ -107,13 +107,13 @@ EnumDefinition::EnumDefinition() {}
 
 FailureOrVoid EnumDefinition::AddEntry(const int32 number, StringPiece name) {
   // Lazy, to avoid creating for non-enums.
-  if (rep_.get() == NULL) {
+  if (rep_.get() == nullptr) {
     // NOTE(user): uses the unbounded (heap) allocator for now. Given that
     // tools normally load protocol descriptors into memory anyway, it seems
     // safe (as it will only cause growth of the constant memory overhead).
     rep_.reset(new Rep(HeapBufferAllocator::Get()));
   } else if (!rep_.unique()) {
-    Rep* new_rep = new Rep(rep_->buffer_allocator());
+    auto* new_rep = new Rep(rep_->buffer_allocator());
     new_rep->CopyFrom(*rep_);
     rep_.reset(new_rep);
   }
@@ -121,11 +121,11 @@ FailureOrVoid EnumDefinition::AddEntry(const int32 number, StringPiece name) {
 }
 
 size_t EnumDefinition::entry_count() const {
-  return rep_.get() == NULL ? 0 : rep_->entry_count();
+  return rep_.get() == nullptr ? 0 : rep_->entry_count();
 }
 
 FailureOr<StringPiece> EnumDefinition::NumberToName(int32 number) const {
-  if (rep_.get() == NULL) {
+  if (rep_.get() == nullptr) {
     THROW(new Exception(ERROR_UNDEFINED_ENUM_VALUE_NUMBER,
                         "The enum is empty"));
   } else {
@@ -134,7 +134,7 @@ FailureOr<StringPiece> EnumDefinition::NumberToName(int32 number) const {
 }
 
 FailureOr<int32> EnumDefinition::NameToNumber(StringPiece name) const {
-  if (rep_.get() == NULL) {
+  if (rep_.get() == nullptr) {
     THROW(new Exception(ERROR_UNDEFINED_ENUM_VALUE_NAME, "The enum is empty"));
   } else {
     return rep_->NameToNumber(name);
@@ -168,7 +168,7 @@ bool TupleSchema::CanMerge(const TupleSchema& a, const TupleSchema& b) {
   return true;
 }
 
-Attribute::~Attribute() {}
+Attribute::~Attribute() = default;
 
 TupleSchema TupleSchema::Merge(const TupleSchema& a, const TupleSchema& b) {
   FailureOr<TupleSchema> result = TryMerge(a, b);

@@ -52,7 +52,7 @@ namespace supersonic {
 
 namespace {
 
-class ForeignFilterCursor : public BasicCursor {
+class ForeignFilterCursor final : public BasicCursor {
  public:
   ForeignFilterCursor(
       const int filter_key_column,

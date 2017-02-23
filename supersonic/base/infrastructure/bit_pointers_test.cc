@@ -96,20 +96,20 @@ TEST(BitPointersTest, Equality) {
   ptr1 = bit_ptr(data);
   EXPECT_TRUE(ptr1 == data);
   ptr1 = bit_ptr();
-  EXPECT_TRUE(ptr1 == NULL);
-  EXPECT_FALSE(ptr1 != NULL);
-  EXPECT_FALSE(ptr2 == NULL);
-  EXPECT_TRUE(ptr2 != NULL);
+  EXPECT_TRUE(ptr1 == nullptr);
+  EXPECT_FALSE(ptr1 != nullptr);
+  EXPECT_FALSE(ptr2 == nullptr);
+  EXPECT_TRUE(ptr2 != nullptr);
 }
 
 TEST(BitPointersTest, NullPointer) {
   bit_ptr ptr;
-  EXPECT_EQ(ptr, bit_ptr(NULL));
-  EXPECT_EQ(NULL, ptr.data());
+  EXPECT_EQ(ptr, bit_ptr(nullptr));
+  EXPECT_EQ(nullptr, ptr.data());
 
   bit_const_ptr cptr;
-  EXPECT_EQ(cptr, bit_const_ptr(NULL));
-  EXPECT_EQ(NULL, cptr.data());
+  EXPECT_EQ(cptr, bit_const_ptr(nullptr));
+  EXPECT_EQ(nullptr, cptr.data());
 }
 
 TEST(BitPointersTest, Copy) {
@@ -634,8 +634,8 @@ TEST(BitPointersTest, FillWithFalseInSingleByte) {
 TEST(BitPointersTest, BoolViewCreation) {
   BoolView view(2);
 
-  EXPECT_EQ(bool_ptr(NULL), view.column(0));
-  EXPECT_EQ(bool_ptr(NULL), view.column(1));
+  EXPECT_EQ(bool_ptr(nullptr), view.column(0));
+  EXPECT_EQ(bool_ptr(nullptr), view.column(1));
 
   EXPECT_EQ(2, view.column_count());
   EXPECT_EQ(0, view.row_count());

@@ -66,7 +66,7 @@ struct Row {
 // Abstract interface of classes that compare particular values (table cells)
 // in corresponding columns for equality.
 struct ValueComparatorInterface {
-  virtual ~ValueComparatorInterface() {}
+  virtual ~ValueComparatorInterface() = default;
   virtual bool Equal(
       const Column& column_a, rowid_t row_id_a,
       const Column& column_b, rowid_t row_id_b) const = 0;
@@ -82,11 +82,11 @@ template <DataType type>
 class ValueComparator : public ValueComparatorInterface {
  public:
   inline bool Equal(const Column& column_a, rowid_t row_id_a,
-                    const Column& column_b, rowid_t row_id_b) const {
+                    const Column& column_b, rowid_t row_id_b) const override {
     operators::Equal equal;
-    const bool is_null_a = (column_a.is_null() != NULL)
+    const bool is_null_a = (column_a.is_null() != nullptr)
         && column_a.is_null()[row_id_a];
-    const bool is_null_b = (column_b.is_null() != NULL)
+    const bool is_null_b = (column_b.is_null() != nullptr)
         && column_b.is_null()[row_id_b];
     if (is_null_a || is_null_b) return is_null_a == is_null_b;
     return equal(column_a.typed_data<type>()[row_id_a],
@@ -95,14 +95,14 @@ class ValueComparator : public ValueComparatorInterface {
 
   // Calculates whether consecutive entries in the column differ.
   inline void ColumnEqual(const Column& column, rowcount_t row_count,
-                          bool *diff) const {
-    typedef typename TypeTraits<type>::cpp_type cpp_type;
+                          bool *diff) const override {
+    using cpp_type = typename TypeTraits<type>::cpp_type;
     operators::Equal equal;
     const cpp_type* data = column.typed_data<type>();
     const cpp_type* end = data + (row_count - 1);
     ++diff;
 
-    if (column.is_null() != NULL) {
+    if (column.is_null() != nullptr) {
       bool is_null_a;
       bool is_null_b = column.is_null()[0];
 
@@ -199,7 +199,7 @@ class AggregateClustersKeySet {
         << "Init() must be called first";
     indexed_block_.ResetArenas();
     indexed_block_row_count_ = 0;
-    last_added_.reset(NULL);
+    last_added_.reset(nullptr);
   }
 
   ~AggregateClustersKeySet();
@@ -274,7 +274,7 @@ void AggregateClustersKeySet::column_compare(const View& view,
     if (!diff[0] && view.row_count() > 0) {
       const Column& key_column_b = last_added->key_columns->column(col_id);
       if (!comparators_[col_id]->Equal(
-      key_column_a, 0, key_column_b, last_added->row_id)) diff[0] = 1;
+      key_column_a, 0, key_column_b, last_added->row_id)) diff[0] = true;
     }
     if (!all_equal) {
       comparators_[col_id]->ColumnEqual(key_column_a, view.row_count(), diff);
@@ -289,7 +289,7 @@ bool AggregateClustersKeySet::GetIndexTable(const View& query,
   DCHECK_GT(indexed_block_.row_capacity(), 0) << "Init() must be called first";
   DCHECK(query.schema().EqualByType(indexed_block_.schema()));
   for (rowid_t i = 0; i < query.row_count(); ++i) row_diff_[i] = false;
-  if (last_added_.get() == NULL) row_diff_[0] = true;
+  if (last_added_.get() == nullptr) row_diff_[0] = true;
   for (int i = 0; i < query.column_count(); ++i)
     column_compare(query, last_added_.get(), i, all_equal, row_diff_);
 
@@ -302,7 +302,7 @@ bool AggregateClustersKeySet::GetIndexTable(const View& query,
       RowSourceAdapter source(query, row_id);
       if (!copier_.Copy(reader, source, writer, &sink))
         return false;
-      if (last_added_.get() == NULL) {
+      if (last_added_.get() == nullptr) {
         last_added_.reset(new Row(&indexed_block_.view(), row_id));
       } else {
         ++last_added_->row_id;
@@ -323,14 +323,14 @@ const rowid_t* AggregateClustersKeySet::Insert(const View& view,
   child_key_view_.set_row_count(view.row_count());
 
   if (!GetIndexTable(child_key_view_, all_equal, key_result_index_map_)) {
-    return NULL;
+    return nullptr;
   }
   return key_result_index_map_;
 }
 
 AggregateClustersKeySet::~AggregateClustersKeySet() {
-    for (int i = 0; i < comparators_.size(); i++)
-      delete comparators_[i];
+    for (auto &comparator: comparators_)
+      delete comparator;
 }
 
 // Processes input during iteration in small chunks, but because input is
@@ -345,19 +345,19 @@ class AggregateClustersCursor : public BasicCursor {
       rowcount_t block_size,
       Cursor* child);
 
-  virtual ResultView Next(rowcount_t max_row_count);
+  ResultView Next(rowcount_t max_row_count) override;
 
-  virtual bool IsWaitingOnBarrierSupported() const {
+  bool IsWaitingOnBarrierSupported() const override {
     return child_.is_waiting_on_barrier_supported();
   }
 
-  virtual void Interrupt() { child_.Interrupt(); }
+  void Interrupt() override { child_.Interrupt(); }
 
-  virtual void ApplyToChildren(CursorTransformer* transformer) {
+  void ApplyToChildren(CursorTransformer* transformer) override {
     child_.ApplyToCursor(transformer);
   }
 
-  virtual CursorId GetCursorId() const { return AGGREGATE_CLUSTERS; }
+  CursorId GetCursorId() const override { return AGGREGATE_CLUSTERS; }
 
  private:
   // Takes ownership of key_set, aggregator and child.
@@ -476,7 +476,7 @@ FailureOrVoid AggregateClustersCursor::ProcessInput() {
 
     const rowid_t* result_index_map =
         key_set_->Insert(view_to_process_, all_equal);
-    if (result_index_map == NULL) {
+    if (result_index_map == nullptr) {
       THROW(new Exception(
           ERROR_MEMORY_EXCEEDED,
           "AggregateClustersCursor memory exceeded. Not enough memory to "
@@ -547,7 +547,7 @@ FailureOrOwned<Cursor> AggregateClustersCursor::Create(
     BufferAllocator* allocator,
     rowcount_t block_size,
     Cursor* child) {
-  CHECK(allocator != NULL);
+  CHECK(allocator != nullptr);
   CHECK_GT(block_size, 0);
   std::unique_ptr<Cursor> child_owner(child);
   std::unique_ptr<Aggregator> aggregator_owner(aggregator);
@@ -596,9 +596,9 @@ class AggregateClustersOperation : public BasicOperation {
         aggregation_specification_(aggregation_specification),
         block_size_(block_size) {}
 
-  virtual ~AggregateClustersOperation() {}
+  ~AggregateClustersOperation() override = default;
 
-  virtual FailureOrOwned<Cursor> CreateCursor() const {
+  FailureOrOwned<Cursor> CreateCursor() const override {
     FailureOrOwned<Cursor> child_cursor = child()->CreateCursor();
     PROPAGATE_ON_FAILURE(child_cursor);
     FailureOrOwned<Aggregator> aggregator = Aggregator::Create(

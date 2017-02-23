@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <limits>
 #include "supersonic/utils/std_namespace.h"
@@ -544,7 +544,7 @@ TEST_F(AggregateCursorTest, OutOfMemoryErrorWhenOutputBlockCanNotBeAllocated) {
       GroupAggregate(
           new CompoundSingleSourceProjector(),
           (new AggregationSpecification)->AddAggregation(SUM, "col0", "sum"),
-          NULL,
+          nullptr,
           test.input());
   test.Execute(op);
 }
@@ -743,16 +743,16 @@ class MemoryUsageTracker : public MemoryStatisticsCollectingBufferAllocator {
     Collector()
         : current_usage_(0), max_usage_(0) {}
 
-    ~Collector() { CHECK_EQ(0, current_usage_); }
+    ~Collector() override { CHECK_EQ(0, current_usage_); }
 
-    virtual void AllocatedMemoryBytes(size_t bytes) {
+    void AllocatedMemoryBytes(size_t bytes) override {
       max_usage_ = max(max_usage_, current_usage_ += bytes);
     }
 
     size_t GetMaxUsage() const { return max_usage_; }
 
-    virtual void RefusedMemoryBytes(size_t bytes) {}
-    virtual void FreedMemoryBytes(size_t bytes) { current_usage_ -= bytes; }
+    void RefusedMemoryBytes(size_t bytes) override {}
+    void FreedMemoryBytes(size_t bytes) override { current_usage_ -= bytes; }
    private:
     size_t current_usage_;
     size_t max_usage_;

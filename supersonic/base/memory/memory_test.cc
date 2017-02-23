@@ -71,7 +71,7 @@ TEST(BufferAllocatorTest, SharedQuotaAllocatorShouldAllocate) {
       EXPECT_EQ(1000, quota.GetUsage());
       EXPECT_EQ(0, allocator->Available());
       scoped_ptr<Buffer> buffer4(allocator->BestEffortAllocate(500, 100));
-      ASSERT_EQ(NULL, buffer4.get());
+      ASSERT_EQ(nullptr, buffer4.get());
       EXPECT_EQ(0, allocator->Available());
     }
     // Now, the last 3 allocations should be undone.
@@ -122,7 +122,7 @@ TEST(BufferAllocatorTest, MaxSizeTAllocateRequestFailsGracefully) {
   EXPECT_EQ(600, allocator->Available());
   const size_t max_size_t = numeric_limits<size_t>::max();
   scoped_ptr<Buffer> buffer2(allocator->Allocate(max_size_t));
-  EXPECT_TRUE(buffer2.get() == NULL);
+  EXPECT_TRUE(buffer2.get() == nullptr);
   EXPECT_EQ(600, allocator->Available());
 }
 
@@ -170,7 +170,7 @@ TEST(BufferAllocatorTest, CompoundSoftHardQuota) {
   EXPECT_EQ(400, buffer2->size());
   EXPECT_EQ(0, compound_allocator->Available());
   scoped_ptr<Buffer> buffer3(compound_allocator->BestEffortAllocate(800, 400));
-  EXPECT_EQ(NULL, buffer3.get());
+  EXPECT_EQ(nullptr, buffer3.get());
 }
 
 TEST(BufferAllocatorTest, AvailableInMemoryLimit) {
@@ -200,24 +200,24 @@ TEST(BufferAllocatorTest, ReallocShouldAdjustQuota) {
 TEST(BufferAllocatorTest, AllocatingEmptyAlwaysSucceeds) {
   MemoryLimit limit(0);
   scoped_ptr<Buffer> buffer1(limit.BestEffortAllocate(300, 10));
-  EXPECT_TRUE(buffer1.get() == NULL);
+  EXPECT_TRUE(buffer1.get() == nullptr);
   scoped_ptr<Buffer> buffer2(limit.BestEffortAllocate(300, 0));
-  ASSERT_TRUE(buffer2.get() != NULL);
+  ASSERT_TRUE(buffer2.get() != nullptr);
   EXPECT_EQ(0, buffer2->size());
   scoped_ptr<Buffer> buffer3(limit.Allocate(0));
-  ASSERT_TRUE(buffer3.get() != NULL);
+  ASSERT_TRUE(buffer3.get() != nullptr);
   EXPECT_EQ(0, buffer3->size());
 }
 
 TEST(BufferAllocatorTest, ReallocatingEmptyAlwaysSucceeds) {
   MemoryLimit limit(300);
   scoped_ptr<Buffer> buffer1(limit.BestEffortAllocate(400, 300));
-  ASSERT_TRUE(buffer1.get() != NULL);
+  ASSERT_TRUE(buffer1.get() != nullptr);
   EXPECT_EQ(300, buffer1->size());
-  EXPECT_TRUE(limit.BestEffortReallocate(100, 0, buffer1.get()) != NULL);
+  EXPECT_TRUE(limit.BestEffortReallocate(100, 0, buffer1.get()) != nullptr);
   EXPECT_EQ(0, buffer1->size());
   EXPECT_EQ(300, limit.GetQuota());
-  EXPECT_TRUE(limit.Reallocate(0, buffer1.get()) != NULL);
+  EXPECT_TRUE(limit.Reallocate(0, buffer1.get()) != nullptr);
   EXPECT_EQ(0, buffer1->size());
   EXPECT_EQ(300, limit.GetQuota());
 }
@@ -228,13 +228,13 @@ TEST(BufferAllocatorTest, SoftQuotaBypassing) {
   SoftQuotaBypassingBufferAllocator lifted_quota(&soft_quota, 200);
 
   scoped_ptr<Buffer> buffer1(lifted_quota.BestEffortAllocate(50, 20));
-  ASSERT_TRUE(buffer1.get() != NULL);
+  ASSERT_TRUE(buffer1.get() != nullptr);
   EXPECT_EQ(50, buffer1->size());
   scoped_ptr<Buffer> buffer2(lifted_quota.BestEffortAllocate(100, 20));
-  ASSERT_TRUE(buffer2.get() != NULL);
+  ASSERT_TRUE(buffer2.get() != nullptr);
   EXPECT_EQ(100, buffer2->size());
   scoped_ptr<Buffer> buffer3(lifted_quota.BestEffortAllocate(100, 20));
-  ASSERT_TRUE(buffer3.get() != NULL);
+  ASSERT_TRUE(buffer3.get() != nullptr);
   EXPECT_EQ(50, buffer3->size());
 }
 
@@ -243,13 +243,13 @@ TEST(BufferAllocatorTest, SoftQuotaBypassingWithTightHardQuota) {
   SoftQuotaBypassingBufferAllocator lifted_quota(&hard_quota, 200);
 
   scoped_ptr<Buffer> buffer1(lifted_quota.BestEffortAllocate(50, 20));
-  ASSERT_TRUE(buffer1.get() != NULL);
+  ASSERT_TRUE(buffer1.get() != nullptr);
   EXPECT_EQ(50, buffer1->size());
   scoped_ptr<Buffer> buffer2(lifted_quota.BestEffortAllocate(100, 20));
-  ASSERT_TRUE(buffer2.get() != NULL);
+  ASSERT_TRUE(buffer2.get() != nullptr);
   EXPECT_EQ(50, buffer2->size());
   scoped_ptr<Buffer> buffer3(lifted_quota.BestEffortAllocate(100, 20));
-  EXPECT_TRUE(buffer3.get() == NULL);
+  EXPECT_TRUE(buffer3.get() == nullptr);
 }
 
 TEST(BufferAllocatorTest, GuaranteeMemoryTest) {
@@ -258,12 +258,12 @@ TEST(BufferAllocatorTest, GuaranteeMemoryTest) {
   EXPECT_EQ(50, less_memory.Available());
   {
     scoped_ptr<Buffer> buffer1(less_memory.Allocate(30));
-    ASSERT_TRUE(buffer1.get() != NULL);
+    ASSERT_TRUE(buffer1.get() != nullptr);
     EXPECT_EQ(30, buffer1->size());
     EXPECT_EQ(20, less_memory.Available());
-    ASSERT_TRUE(less_memory.Allocate(30) == NULL);
+    ASSERT_TRUE(less_memory.Allocate(30) == nullptr);
     EXPECT_EQ(20, less_memory.Available());
-    ASSERT_TRUE(less_memory.BestEffortAllocate(30, 10) == NULL);
+    ASSERT_TRUE(less_memory.BestEffortAllocate(30, 10) == nullptr);
     scoped_ptr<Buffer> buffer2(less_memory.Allocate(20));
     EXPECT_EQ(20, buffer2->size());
     EXPECT_EQ(0, less_memory.Available());
@@ -273,15 +273,15 @@ TEST(BufferAllocatorTest, GuaranteeMemoryTest) {
   EXPECT_EQ(150, more_memory.Available());
   {
     scoped_ptr<Buffer> buffer1(more_memory.Allocate(70));
-    ASSERT_TRUE(buffer1.get() != NULL);
+    ASSERT_TRUE(buffer1.get() != nullptr);
     EXPECT_EQ(70, buffer1->size());
     EXPECT_EQ(80, more_memory.Available());
-    ASSERT_TRUE(more_memory.BestEffortAllocate(40, 10) == NULL);
+    ASSERT_TRUE(more_memory.BestEffortAllocate(40, 10) == nullptr);
     EXPECT_EQ(80, more_memory.Available());
-    ASSERT_TRUE(more_memory.Allocate(40) == NULL);
+    ASSERT_TRUE(more_memory.Allocate(40) == nullptr);
     EXPECT_EQ(80, more_memory.Available());
     scoped_ptr<Buffer> buffer2(more_memory.Allocate(30));
-    ASSERT_TRUE(buffer2.get() != NULL);
+    ASSERT_TRUE(buffer2.get() != nullptr);
     EXPECT_EQ(30, buffer2->size());
     EXPECT_EQ(50, more_memory.Available());
   }
@@ -290,7 +290,7 @@ TEST(BufferAllocatorTest, GuaranteeMemoryTest) {
 
 TEST(BufferAllocatorTest,
      MemoryStatisticsCollectingBufferAllocatorCallsCollector) {
-  MemoryStatisticsCollectorMock* stats_collector_mock(
+  auto* stats_collector_mock(
       new MemoryStatisticsCollectorMock);
   MemoryLimit hard_limit(300);
   MemoryLimit soft_quota(100, false, &hard_limit);
@@ -308,9 +308,9 @@ TEST(BufferAllocatorTest,
     EXPECT_CALL(*stats_collector_mock, Die());
   }
   scoped_ptr<Buffer> buffer1(stats_allocator.BestEffortAllocate(50, 50));
-  ASSERT_TRUE(buffer1.get() != NULL);
+  ASSERT_TRUE(buffer1.get() != nullptr);
   scoped_ptr<Buffer> buffer2(stats_allocator.BestEffortAllocate(150, 100));
-  ASSERT_TRUE(buffer2.get() != NULL);
+  ASSERT_TRUE(buffer2.get() != nullptr);
   EXPECT_TRUE(stats_allocator.BestEffortReallocate(200, 100, buffer1.get()));
   EXPECT_FALSE(stats_allocator.BestEffortReallocate(200, 200, buffer1.get()));
   EXPECT_TRUE(stats_allocator.BestEffortReallocate(20, 20, buffer1.get()));

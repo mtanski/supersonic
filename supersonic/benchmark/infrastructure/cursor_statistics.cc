@@ -49,7 +49,7 @@ class LeafStatistics : public CursorStatistics {
                          timing_reference,
                          BenchmarkData::BENCHMARKED) {}
 
-  virtual void GatherData();
+  void GatherData() override;
 };
 
 void LeafStatistics::GatherData() {
@@ -68,7 +68,7 @@ class PassAllStatistics : public CursorStatistics {
                          timing_reference,
                          BenchmarkData::BENCHMARKED) {}
 
-  virtual void GatherData();
+  void GatherData() override;
 };
 
 void PassAllStatistics::GatherData() {
@@ -87,7 +87,7 @@ class PassSomeStatistics : public CursorStatistics {
                          timing_reference,
                          BenchmarkData::BENCHMARKED) {}
 
-  virtual void GatherData();
+  void GatherData() override;
 };
 
 void PassSomeStatistics::GatherData() {
@@ -124,7 +124,7 @@ class PreprocessStatistics : public CursorStatistics {
                          timing_reference,
                          BenchmarkData::BENCHMARKED) {}
 
-  virtual void GatherData();
+  void GatherData() override;
 };
 
 void PreprocessStatistics::GatherData() {
@@ -150,7 +150,7 @@ class MayPreprocessStatistics : public CursorStatistics {
                          timing_reference,
                          BenchmarkData::BENCHMARKED) {}
 
-  virtual void GatherData();
+  void GatherData() override;
 };
 
 void MayPreprocessStatistics::GatherData() {
@@ -189,7 +189,7 @@ class JoinStatistics : public CursorStatistics {
     return input_listeners_[1];
   }
 
-  virtual void GatherData();
+  void GatherData() override;
 };
 
 void JoinStatistics::GatherData() {
@@ -251,7 +251,7 @@ class ParallelStatistics : public CursorStatistics {
                          timing_reference,
                          BenchmarkData::BENCHMARKED) {}
 
-  virtual void GatherData();
+  void GatherData() override;
 };
 
 void ParallelStatistics::GatherData() {
@@ -270,9 +270,9 @@ class NoStatistics : public CursorStatistics {
       const vector<CursorWithBenchmarkListener*>& input,
       CursorWithBenchmarkListener* output,
       BenchmarkData::CursorType cursor_type)
-    : CursorStatistics(input, output, NULL, cursor_type) {}
+    : CursorStatistics(input, output, nullptr, cursor_type) {}
 
-  virtual void GatherData() {}
+  void GatherData() override {}
 };
 
 }  // namespace
@@ -284,8 +284,7 @@ CursorStatistics::CursorStatistics(
   Init(output, timing_reference, cursor_type);
 }
 
-typedef vector<CursorWithBenchmarkListener*>::const_iterator
-    const_entry_iterator;
+using const_entry_iterator = vector<CursorWithBenchmarkListener *>::const_iterator;
 
 CursorStatistics::CursorStatistics(
     const vector<CursorWithBenchmarkListener*>& input,
@@ -293,9 +292,8 @@ CursorStatistics::CursorStatistics(
     const CursorStatistics* timing_reference,
     BenchmarkData::CursorType cursor_type) {
   Init(output, timing_reference, cursor_type);
-  for (const_entry_iterator entry = input.begin(); entry != input.end();
-       ++entry) {
-    input_listeners_.push_back((*entry)->listener());
+  for (auto entry: input) {
+    input_listeners_.push_back(entry->listener());
   }
 }
 
@@ -307,7 +305,7 @@ void CursorStatistics::Init(
   timing_reference_ = timing_reference;
   computation_time_ = 0;
 
-  if (output->cursor() != NULL) {
+  if (output->cursor() != nullptr) {
     benchmark_data_.set_cursor_name(
         CursorId_Name(output->cursor()->GetCursorId()));
     benchmark_data_.set_cursor_type(cursor_type);
@@ -327,7 +325,7 @@ void CursorStatistics::GatherCommonData(bool sequential) {
                           : GetTotalOutputTime();
 
   benchmark_data_.set_processing_time(processing_time);
-  if (timing_reference_ != NULL) {
+  if (timing_reference_ != nullptr) {
     benchmark_data_.set_relative_time(
         CalculateRate(processing_time,
                       timing_reference_->computation_time_,
@@ -343,8 +341,8 @@ void CursorStatistics::GatherCommonData(bool sequential) {
 
 int64 CursorStatistics::GetTotalInputTime() const {
   int64 time_sum = 0;
-  for (size_t i = 0; i < input_listeners_.size(); ++i) {
-    time_sum += input_listeners_[i]->TotalTimeUsec();
+  for (auto input_listener: input_listeners_) {
+    time_sum += input_listener->TotalTimeUsec();
   }
   return time_sum;
 }
@@ -355,8 +353,8 @@ int64 CursorStatistics::GetTotalOutputTime() const {
 
 int64 CursorStatistics::GetFirstNextInputTime() const {
   int64 time_sum = 0;
-  for (size_t i = 0; i < input_listeners_.size(); ++i) {
-    time_sum += input_listeners_[i]->FirstNextTimeUsec();
+  for (auto input_listener: input_listeners_) {
+    time_sum += input_listener->FirstNextTimeUsec();
   }
   return time_sum;
 }
@@ -367,16 +365,16 @@ int64 CursorStatistics::GetFirstNextOutputTime() const {
 
 int64 CursorStatistics::GetInputRowCountSum() const {
   int64 total_rows_in = 0;
-  for (size_t i = 0; i < input_listeners_.size(); ++i) {
-    total_rows_in += input_listeners_[i]->RowsProcessed();
+  for (auto input_listener: input_listeners_) {
+    total_rows_in += input_listener->RowsProcessed();
   }
   return total_rows_in;
 }
 
 int64 CursorStatistics::GetInputRowCountMax() const {
   int64 rows_max = 0;
-  for (size_t i = 0; i < input_listeners_.size(); ++i) {
-    rows_max = std::max(rows_max, input_listeners_[i]->RowsProcessed());
+  for (auto input_listener: input_listeners_) {
+    rows_max = std::max(rows_max, input_listener->RowsProcessed());
   }
   return rows_max;
 }

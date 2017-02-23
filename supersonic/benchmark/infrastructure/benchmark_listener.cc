@@ -39,34 +39,34 @@ class BenchmarkListenerImpl : public BenchmarkListener {
         total_time_nanos_(0),
         first_next_time_nanos_(0) {}
 
-  virtual ~BenchmarkListenerImpl() {}
+  ~BenchmarkListenerImpl() override = default;
 
-  virtual void BeforeNext(const string& id, rowcount_t max_row_count) {}
+  void BeforeNext(const string& id, rowcount_t max_row_count) override {}
 
-  virtual void AfterNext(const string& id,
-                         rowcount_t max_row_count,
-                         const ResultView& result_view,
-                         int64 time_nanos);
+  void AfterNext(const string& id,
+                 rowcount_t max_row_count,
+                 const ResultView& result_view,
+                 int64 time_nanos) override;
 
-  virtual int64 NextCalls() const {
+  int64 NextCalls() const override {
     return next_calls_;
   }
 
-  virtual int64 RowsProcessed() const {
+  int64 RowsProcessed() const override {
     return rows_processed_;
   }
 
-  virtual int64 TotalTimeUsec() const {
+  int64 TotalTimeUsec() const override {
     return total_time_nanos_ / kNumNanosInMicro;
   }
 
-  virtual int64 FirstNextTimeUsec() const {
+  int64 FirstNextTimeUsec() const override {
     return first_next_time_nanos_ / kNumNanosInMicro;
   }
 
-  virtual string GetResults() const;
+  string GetResults() const override;
 
-  virtual string GetResults(const BenchmarkListener& subtract) const;
+  string GetResults(const BenchmarkListener& subtract) const override;
 
  private:
   int64 next_calls_;

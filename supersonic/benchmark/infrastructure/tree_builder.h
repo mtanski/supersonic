@@ -70,11 +70,9 @@ class BenchmarkResult {
 // should outlive the cursor it has been used to build a tree for.
 class BenchmarkTreeBuilder {
  public:
-  BenchmarkTreeBuilder()
-      : root_node_stats_(NULL),
-        tree_created_(false) {}
+  BenchmarkTreeBuilder() = default;
 
-  virtual ~BenchmarkTreeBuilder() {}
+  virtual ~BenchmarkTreeBuilder() = default;
 
   // Creates a benchmarking tree for the argument cursor. The caller will take
   // ownership of the returned object which contains a handle to the tree root
@@ -134,14 +132,14 @@ class BenchmarkTreeBuilder {
   // corresponding to the cursor it describes. This is used only to have access
   // to the statistics of the root so that they can be used during the recursive
   // node construction.
-  CursorStatistics* root_node_stats_;
+  CursorStatistics* root_node_stats_ = nullptr;
 
   // Pointer vector for managing the lifetime of history entries.
   util::gtl::PointerVector<CursorWithBenchmarkListener> entries_;
 
   // Boolean flag which is set to true when a tree is built for a cursor, used
   // to ensure that the builder is used only for one cursor.
-  bool tree_created_;
+  bool tree_created_ = false;
 
   DISALLOW_COPY_AND_ASSIGN(BenchmarkTreeBuilder);
 };

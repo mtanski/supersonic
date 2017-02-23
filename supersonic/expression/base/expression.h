@@ -45,7 +45,7 @@ typedef FailureOrReference<const View> EvaluationResult;
 // fully resolved. To evaluate it you need to pass a skip_vector to it.
 class BoundExpression {
  public:
-  virtual ~BoundExpression() {}
+  virtual ~BoundExpression() = default;
 
   // Returns the schema of the result.
   // Most expressions have a single-attribute result of some basic type.
@@ -146,7 +146,7 @@ FailureOrOwned<BoundExpressionTree>
 // 'Symbolic' expression. The result type is not yet known.
 class Expression {
  public:
-  virtual ~Expression() {}
+  virtual ~Expression() = default;
 
   // Binds the expression to the input schema. Resolves all runtime types.
   // Caller takes ownership of the returned BoundExpressionTree.
@@ -171,7 +171,7 @@ class Expression {
   virtual string ToString(bool verbose) const = 0;
 
  protected:
-  Expression() {}
+  Expression() = default;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Expression);
@@ -182,7 +182,7 @@ class Expression {
 // A list of bound expressions.
 class BoundExpressionList {
  public:
-  BoundExpressionList() {}
+  BoundExpressionList() = default;
   BoundExpressionList* add(BoundExpression* expression) {
     expressions_.push_back(make_linked_ptr(expression));
     return this;
@@ -207,7 +207,7 @@ class BoundExpressionList {
 // A list of symbolic expressions.
 class ExpressionList {
  public:
-  ExpressionList() {}
+  ExpressionList() = default;
   ExpressionList* add(const Expression* e) {
     expressions_.push_back(linked_ptr<const Expression>(e));
     return this;

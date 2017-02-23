@@ -48,7 +48,7 @@ void OwnedColumn::Init(BufferAllocator* allocator, Column* column) {
   CHECK_NOTNULL(data_buffer_.get());
   if (column_->attribute().is_nullable()) {
     is_null_array_.Reallocate(0, allocator);
-    CHECK(!(is_null_array_.mutable_data() == NULL));
+    CHECK(!(is_null_array_.mutable_data() == nullptr));
   }
   column_->Reset(mutable_data(), mutable_is_null());
 }

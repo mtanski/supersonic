@@ -32,7 +32,7 @@ class CursorTransformer;
 
 class LookupIndex {
  public:
-  virtual ~LookupIndex() {}
+  virtual ~LookupIndex() = default;
   // Performs in a single invocation a series of individual lookups, each of
   // them stored in the query block as a single row. Query blocks should only
   // hold key columns, meaning they should have identical schema as key_schema.
@@ -63,7 +63,7 @@ class LookupIndex {
 
 class LookupIndexBuilder {
  public:
-  LookupIndexBuilder() {}
+  LookupIndexBuilder() = default;
   virtual const TupleSchema& schema() const = 0;
 
   // Attempts to build the index. May fail (return an Exception), or return
@@ -78,7 +78,7 @@ class LookupIndexBuilder {
   // Runs the cursor transformer on the input cursor (if it has one).
   virtual void ApplyToChildren(CursorTransformer* transformer) = 0;
 
-  virtual ~LookupIndexBuilder() {}
+  virtual ~LookupIndexBuilder() = default;
  private:
   DISALLOW_COPY_AND_ASSIGN(LookupIndexBuilder);
 };
@@ -107,7 +107,7 @@ class ResultLookupIndexView {
  public:
   // A result that indicates END_OF_INPUT.
   static ResultLookupIndexView EOS() {
-    return ResultLookupIndexView(NULL, true);
+    return ResultLookupIndexView(nullptr, true);
   }
 
   // A result that indicates a success, with a valid value.
@@ -152,14 +152,14 @@ class ResultLookupIndexView {
 // A stream of LookupIndexView results modeled after Cursor.
 class LookupIndexCursor {
  public:
-  virtual ~LookupIndexCursor() {}
+  virtual ~LookupIndexCursor() = default;
 
   virtual const TupleSchema& schema() const = 0;
   virtual ResultLookupIndexView Next(rowcount_t max_row_count) = 0;
 
  protected:
   // To allow instantiation in subclasses.
-  LookupIndexCursor() {}
+  LookupIndexCursor() = default;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(LookupIndexCursor);

@@ -42,7 +42,7 @@ static Block* EmptyBlockWithSingleNullableColumn(DataType column_type,
   Attribute column_attribute("col0", column_type, NULLABLE);
   TupleSchema schema;
   schema.add_attribute(column_attribute);
-  Block* block = new Block(schema, HeapBufferAllocator::Get());
+  auto* block = new Block(schema, HeapBufferAllocator::Get());
   CHECK(block->Reallocate(capacity));
   return block;
 }
@@ -52,7 +52,7 @@ static Block* EmptyBlockWithSingleNotNullableColumn(DataType column_type,
   Attribute column_attribute("col0", column_type, NOT_NULLABLE);
   TupleSchema schema;
   schema.add_attribute(column_attribute);
-  Block* block = new Block(schema, HeapBufferAllocator::Get());
+  auto* block = new Block(schema, HeapBufferAllocator::Get());
   CHECK(block->Reallocate(capacity));
   return block;
 }
@@ -67,11 +67,11 @@ TEST_F(AggregatorsTest, ComputeSimpleAggregation) {
   const rowid_t result_index[] = { 0, 1, 2, 3 };
   const int64 input1[] = { -5, 0, 4, 4 };
   View view(TupleSchema::Singleton("", INT64, NOT_NULLABLE));
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
   const int64 input2[] = { -2, 3, 1, -1 };
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -97,11 +97,11 @@ TEST_F(AggregatorsTest,
   const rowid_t result_index[] = { 0, 1, 2, 3 };
   View view(TupleSchema::Singleton("", INT64, NULLABLE));
   const int32 input1[] = { -5, 0, 4, 4 };
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
   const int32 input2[] = { -2, 3, 1, -1 };
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -127,11 +127,11 @@ TEST_F(AggregatorsTest,
   const rowid_t result_index[] = { 0, 1, 2, 3 };
   View view(TupleSchema::Singleton("", UINT32, NULLABLE));
   const uint32 input1[] = { 2, 3, 1, 0xFFFFFFFF };
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
   const uint32 input2[] = { 5, 0, 4, 4 };
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -196,11 +196,11 @@ TEST_F(AggregatorsTest, ComputeAggregationWithResultStoredAsString) {
   const rowid_t result_index[] = { 0, 1, 2, 3 };
   View view(TupleSchema::Singleton("", STRING, NULLABLE));
   const StringPiece input1[] = { "baba", "baba", "dada",  "oda"};
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
   const StringPiece input2[] = { "abakus", "baba", "ada", "wada"};
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -222,7 +222,7 @@ TEST_F(AggregatorsTest, ResultIndexRespectedWhileUpdatingAggregation) {
 
   View view(TupleSchema::Singleton("", INT32, NULLABLE));
   const int32 input[] = { 1, 1, 1, 1 };
-  view.mutable_column(0)->Reset(input, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input, bool_ptr(nullptr));
   // Agregate all results in 3rd element of result table.
   const rowid_t result_index[] = { 2, 2, 2, 2 };
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
@@ -241,7 +241,7 @@ TEST_F(AggregatorsTest, ComputeCount) {
 
   View view(TupleSchema::Singleton("", INT64, NULLABLE));
   const int64 input[] = { -5, 0, 4, 4 };
-  view.mutable_column(0)->Reset(input, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input, bool_ptr(nullptr));
   const rowid_t result_index[] = { 0, 0, 0, 0 };
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
@@ -258,7 +258,7 @@ TEST_F(AggregatorsTest, ComputeCountWithoutInputColumn) {
   std::unique_ptr<ColumnAggregator> aggregator(SucceedOrDie(
       ColumnAggregatorFactory().CreateCountAggregator(result_block.get(), 0)));
   const rowid_t result_index[] = { 0, 0, 0, 0 };
-  ASSERT_TRUE(aggregator->UpdateAggregation(NULL, 4, result_index)
+  ASSERT_TRUE(aggregator->UpdateAggregation(nullptr, 4, result_index)
               .is_success());
 
   std::unique_ptr<Block> expected_output(
@@ -300,7 +300,7 @@ TEST_F(AggregatorsTest, ComputeDistinctCountOfIntegers) {
   // Only distinct values are counted, so result should be 2.
   const int64 input1[] = { -5, 2, -5, -5 };
   View view(TupleSchema::Singleton("", INT64, NULLABLE));
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
   std::unique_ptr<Block> expected_output(
@@ -318,12 +318,12 @@ TEST_F(AggregatorsTest, ComputeDistinctCountOfStrings) {
   const rowid_t result_index[] = { 0, 0, 0, 0 };
   const StringPiece input1[] = { "baba", "baba", "dada",  "oda"};
   View view(TupleSchema::Singleton("", INT64, NULLABLE));
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
   const StringPiece input2[] = { "zzzzzzzz", "oda", "baba"};
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 3, result_index)
               .is_success());
 
@@ -345,12 +345,12 @@ TEST_F(AggregatorsTest, ComputeDistinctConcatOfStrings) {
   const rowid_t result_index[] = { 0, 0, 1, 1 };
   const StringPiece input1[] = { "baba", "aba", "baba",  "baba"};
   View view(TupleSchema::Singleton("", STRING, NULLABLE));
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
   const StringPiece input2[] = { "aba", "oda", "rada", "baba"};
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -375,11 +375,11 @@ TEST_F(AggregatorsTest, ComputeConcatOfInts) {
   const rowid_t result_index[] = { 0, 0, 0, 0 };
   View view(TupleSchema::Singleton("", STRING, NULLABLE));
   const int32 input1[] = { -5, 0, 345, 2 };
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
   const int32 input2[] = { -2, 3, 1};
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 3, result_index)
               .is_success());
 
@@ -398,11 +398,11 @@ TEST_F(AggregatorsTest, ComputeConcatOfStrings) {
   const rowid_t result_index[] = { 0, 0, 0, 0 };
   View view(TupleSchema::Singleton("", STRING, NULLABLE));
   const StringPiece input1[] = { "baba", "baba", "dada"};
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 3, result_index)
               .is_success());
   const StringPiece input2[] = { "aba", "wada"};
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 2, result_index)
               .is_success());
 
@@ -421,7 +421,7 @@ TEST_F(AggregatorsTest, ResetSetsAllResultsToNulls) {
   const rowid_t result_index[] = { 0, 1, 2, 3 };
   const int64 input1[] = { -5, 0, 4, 4 };
   View view(TupleSchema::Singleton("", INT64, NULLABLE));
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
   aggregator->Reset();
@@ -443,7 +443,7 @@ TEST_F(AggregatorsTest, ResetSetsAllCountResultsToZero) {
 
   View view(TupleSchema::Singleton("", INT64, NULLABLE));
   const int64 input[] = { -5, 0, 4, 4 };
-  view.mutable_column(0)->Reset(input, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input, bool_ptr(nullptr));
   const rowid_t result_index[] = { 0, 0, 0, 0 };
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
@@ -465,7 +465,7 @@ TEST_F(AggregatorsTest, ResetWorksOnStringResultColumn) {
   const rowid_t result_index[] = { 0, 1, 2, 3 };
   View view(TupleSchema::Singleton("", STRING, NULLABLE));
   const StringPiece input1[] = { "baba", "baba", "dada",  "oda"};
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -473,7 +473,7 @@ TEST_F(AggregatorsTest, ResetWorksOnStringResultColumn) {
   aggregator->Reset();
 
   const StringPiece input2[] = { "aba", "baba", "ada", "wada"};
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -497,7 +497,7 @@ TEST_F(AggregatorsTest, ResetDistinctAggregationDiscardsOldDistinctValues) {
   const rowid_t result_index[] = { 0, 0, 0, 0 };
   const StringPiece input1[] = { "baba", "baba", "dada",  "oda"};
   View view(TupleSchema::Singleton("", STRING, NULLABLE));
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 4, result_index)
               .is_success());
 
@@ -505,7 +505,7 @@ TEST_F(AggregatorsTest, ResetDistinctAggregationDiscardsOldDistinctValues) {
   aggregator->Reset();
 
   const StringPiece input2[] = { "zzzzzzzz", "oda", "baba", "oda"};
-  view.mutable_column(0)->Reset(input2, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input2, bool_ptr(nullptr));
   ASSERT_TRUE(aggregator->UpdateAggregation(&view.column(0), 3, result_index)
               .is_success());
 
@@ -551,7 +551,7 @@ TEST_F(AggregatorsTest, UpdateStringAggregationReturnsErrorWhenOutOfMemory) {
   View view(TupleSchema::Singleton("", STRING, NULLABLE));
   // String of length 33 shouldn't fit in what is left from 32 bytes.
   const StringPiece input1[] = { "foooooooooooooooooooooooooooooooo"};
-  view.mutable_column(0)->Reset(input1, bool_ptr(NULL));
+  view.mutable_column(0)->Reset(input1, bool_ptr(nullptr));
   ASSERT_FALSE(aggregator->UpdateAggregation(&view.column(0), 1, result_index)
                .is_success());
 }

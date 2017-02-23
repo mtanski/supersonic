@@ -36,7 +36,7 @@ Buffer* MockBufferAllocator::AllocateInternal(
       case GRANT_MIN: return Grant(minimal, originator);
       case DO_NOT_GRANT:
         if (minimal == 0) return Grant(0, originator);
-        return NULL;
+        return nullptr;
       case FAIL_ON_CHECK:
         if (minimal == 0) return Grant(0, originator);
         LOG(FATAL);

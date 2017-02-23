@@ -181,11 +181,11 @@ class StringPiece {
   //
   // Style guide exception granted:
   // http://goto/style-guide-exception-20978288
-  StringPiece() : ptr_(NULL), length_(0) {}
+  StringPiece() : ptr_(nullptr), length_(0) {}
 
   StringPiece(const char* str)  // NOLINT(runtime/explicit)
       : ptr_(str), length_(0) {
-    if (str != NULL) {
+    if (str != nullptr) {
       length_ = CheckedSsizeTFromSizeT(strlen(str));
     }
   }
@@ -230,7 +230,7 @@ class StringPiece {
   bool empty() const { return length_ == 0; }
 
   void clear() {
-    ptr_ = NULL;
+    ptr_ = nullptr;
     length_ = 0;
   }
 
@@ -242,7 +242,7 @@ class StringPiece {
 
   void set(const char* str) {
     ptr_ = str;
-    if (str != NULL)
+    if (str != nullptr)
       length_ = CheckedSsizeTFromSizeT(strlen(str));
     else
       length_ = 0;
@@ -291,7 +291,7 @@ class StringPiece {
   // for a StringPiece be called "as_string()".  We also leave the
   // "as_string()" method defined here for existing code.
   string ToString() const {
-    if (ptr_ == NULL) return string();
+    if (ptr_ == nullptr) return string();
     return string(data(), size());
   }
 

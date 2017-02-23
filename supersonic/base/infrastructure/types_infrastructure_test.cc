@@ -38,7 +38,7 @@ class PrinterTest : public testing::Test {
   template<DataType type>
   void TestPrinterForNull() {
     string target = "dummy ";
-    GetDefaultPrinterFn(type)(NULL, &target);
+    GetDefaultPrinterFn(type)(nullptr, &target);
     EXPECT_EQ("dummy NULL", target);
   }
 
@@ -133,7 +133,7 @@ class ParserTest : public testing::Test {
   template<DataType type>
   void TestParser(const char* value,
                   const typename TypeTraits<type>::cpp_type& expected_value) {
-    typedef typename TypeTraits<type>::cpp_type cpp_type;
+    using cpp_type = typename TypeTraits<type>::cpp_type;
     cpp_type target = cpp_type();
     EXPECT_TRUE(GetDefaultParserFn(type)(value, &target))
         << "Failed to parse: " << value;
@@ -298,9 +298,9 @@ TEST(SortComparatorTest, ShouldSortIntegersAscendingNonTerminal) {
   EXPECT_EQ(RESULT_LESS, comp(&data[0], &data[1]));
   EXPECT_EQ(RESULT_LESS, comp(&data[1], &data[2]));
   EXPECT_EQ(RESULT_EQUAL, comp(&data[2], &data[3]));
-  EXPECT_EQ(RESULT_LESS, comp(NULL, &data[3]));
-  EXPECT_EQ(RESULT_EQUAL, comp(NULL, NULL));
-  EXPECT_EQ(RESULT_GREATER, comp(&data[3], NULL));
+  EXPECT_EQ(RESULT_LESS, comp(nullptr, &data[3]));
+  EXPECT_EQ(RESULT_EQUAL, comp(nullptr, nullptr));
+  EXPECT_EQ(RESULT_GREATER, comp(&data[3], nullptr));
   EXPECT_EQ(RESULT_GREATER, comp(&data[3], &data[1]));
 }
 
@@ -310,9 +310,9 @@ TEST(SortComparatorTest, ShouldSortIntegersAscendingTerminal) {
   EXPECT_EQ(RESULT_LESS, comp(&data[0], &data[1]));
   EXPECT_EQ(RESULT_LESS, comp(&data[1], &data[2]));
   EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[2], &data[3]));
-  EXPECT_EQ(RESULT_LESS, comp(NULL, &data[3]));
-  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(NULL, NULL));
-  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[3], NULL));
+  EXPECT_EQ(RESULT_LESS, comp(nullptr, &data[3]));
+  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(nullptr, nullptr));
+  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[3], nullptr));
   EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[3], &data[1]));
 }
 
@@ -322,9 +322,9 @@ TEST(SortComparatorTest, ShouldSortIntegersDescendingNonTerminal) {
   EXPECT_EQ(RESULT_LESS, comp(&data[1], &data[0]));
   EXPECT_EQ(RESULT_LESS, comp(&data[2], &data[1]));
   EXPECT_EQ(RESULT_EQUAL, comp(&data[3], &data[2]));
-  EXPECT_EQ(RESULT_LESS, comp(&data[3], NULL));
-  EXPECT_EQ(RESULT_EQUAL, comp(NULL, NULL));
-  EXPECT_EQ(RESULT_GREATER, comp(NULL, &data[3]));
+  EXPECT_EQ(RESULT_LESS, comp(&data[3], nullptr));
+  EXPECT_EQ(RESULT_EQUAL, comp(nullptr, nullptr));
+  EXPECT_EQ(RESULT_GREATER, comp(nullptr, &data[3]));
   EXPECT_EQ(RESULT_GREATER, comp(&data[1], &data[3]));
 }
 
@@ -334,9 +334,9 @@ TEST(SortComparatorTest, ShouldSortIntegersDescendingTerminal) {
   EXPECT_EQ(RESULT_LESS, comp(&data[1], &data[0]));
   EXPECT_EQ(RESULT_LESS, comp(&data[2], &data[1]));
   EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[3], &data[2]));
-  EXPECT_EQ(RESULT_LESS, comp(&data[3], NULL));
-  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(NULL, NULL));
-  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(NULL, &data[3]));
+  EXPECT_EQ(RESULT_LESS, comp(&data[3], nullptr));
+  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(nullptr, nullptr));
+  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(nullptr, &data[3]));
   EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[1], &data[3]));
 }
 
@@ -346,9 +346,9 @@ TEST(SortComparatorTest, ShouldSortStringsAscendingTerminal) {
   EXPECT_EQ(RESULT_LESS, comp(&data[0], &data[1]));
   EXPECT_EQ(RESULT_LESS, comp(&data[1], &data[2]));
   EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[2], &data[3]));
-  EXPECT_EQ(RESULT_LESS, comp(NULL, &data[3]));
-  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(NULL, NULL));
-  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[3], NULL));
+  EXPECT_EQ(RESULT_LESS, comp(nullptr, &data[3]));
+  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(nullptr, nullptr));
+  EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[3], nullptr));
   EXPECT_EQ(RESULT_GREATER_OR_EQUAL, comp(&data[3], &data[1]));
 }
 
@@ -358,9 +358,9 @@ TEST(SortComparatorTest, ShouldSortStringsAscendingNonTerminal) {
   EXPECT_EQ(RESULT_LESS, comp(&data[0], &data[1]));
   EXPECT_EQ(RESULT_LESS, comp(&data[1], &data[2]));
   EXPECT_EQ(RESULT_EQUAL, comp(&data[2], &data[3]));
-  EXPECT_EQ(RESULT_LESS, comp(NULL, &data[3]));
-  EXPECT_EQ(RESULT_EQUAL, comp(NULL, NULL));
-  EXPECT_EQ(RESULT_GREATER, comp(&data[3], NULL));
+  EXPECT_EQ(RESULT_LESS, comp(nullptr, &data[3]));
+  EXPECT_EQ(RESULT_EQUAL, comp(nullptr, nullptr));
+  EXPECT_EQ(RESULT_GREATER, comp(&data[3], nullptr));
   EXPECT_EQ(RESULT_GREATER, comp(&data[3], &data[1]));
 }
 
@@ -388,11 +388,11 @@ TEST_F(StaticBindingTest, Inequality) {
   EXPECT_EQ(RESULT_EQUAL, comp(&data1[2], &data2[2]));
   EXPECT_EQ(RESULT_LESS, comp(&data1[0], &data2[1]));
   EXPECT_EQ(RESULT_LESS, comp(&data1[1], &data2[2]));
-  EXPECT_EQ(RESULT_LESS, comp(NULL, &data2[3]));
+  EXPECT_EQ(RESULT_LESS, comp(nullptr, &data2[3]));
   EXPECT_EQ(RESULT_GREATER, comp(&data1[1], &data2[0]));
   EXPECT_EQ(RESULT_GREATER, comp(&data1[2], &data2[1]));
-  EXPECT_EQ(RESULT_GREATER, comp(&data1[2], NULL));
-  EXPECT_EQ(RESULT_EQUAL_NULL, comp(NULL, NULL));
+  EXPECT_EQ(RESULT_GREATER, comp(&data1[2], nullptr));
+  EXPECT_EQ(RESULT_EQUAL_NULL, comp(nullptr, nullptr));
 }
 
 class EqualsComparatorTest : public testing::Test {};
@@ -425,10 +425,10 @@ TEST_F(EqualsComparatorTest, ShouldCompareIntegersWithNull) {
   const int32 data1[] = { -5, NULL, 4 };
   const int32 data2[] = { NULL, 1, 4 };
   EqualityComparator comp = GetEqualsComparator(INT32, INT32, false, false);
-  EXPECT_FALSE(comp(&data1[0], NULL));
-  EXPECT_FALSE(comp(NULL, &data2[1]));
+  EXPECT_FALSE(comp(&data1[0], nullptr));
+  EXPECT_FALSE(comp(nullptr, &data2[1]));
   EXPECT_TRUE(comp(&data1[2], &data2[2]));
-  EXPECT_TRUE(comp(NULL, NULL));
+  EXPECT_TRUE(comp(nullptr, nullptr));
 }
 
 
@@ -444,11 +444,11 @@ TEST_F(MergeComparatorTest, ShouldCompareMixedIntegersAscending) {
   EXPECT_EQ(RESULT_EQUAL, comp(&data1[2], &data2[2]));
   EXPECT_EQ(RESULT_LESS, comp(&data1[0], &data2[1]));
   EXPECT_EQ(RESULT_LESS, comp(&data1[1], &data2[2]));
-  EXPECT_EQ(RESULT_LESS, comp(NULL, &data2[3]));
+  EXPECT_EQ(RESULT_LESS, comp(nullptr, &data2[3]));
   EXPECT_EQ(RESULT_GREATER, comp(&data1[1], &data2[0]));
   EXPECT_EQ(RESULT_GREATER, comp(&data1[2], &data2[1]));
-  EXPECT_EQ(RESULT_GREATER, comp(&data1[2], NULL));
-  EXPECT_EQ(RESULT_EQUAL_NULL, comp(NULL, NULL));
+  EXPECT_EQ(RESULT_GREATER, comp(&data1[2], nullptr));
+  EXPECT_EQ(RESULT_EQUAL_NULL, comp(nullptr, nullptr));
 }
 
 TEST_F(MergeComparatorTest, ShouldCompareStringsDescending) {
@@ -461,11 +461,11 @@ TEST_F(MergeComparatorTest, ShouldCompareStringsDescending) {
   EXPECT_EQ(RESULT_EQUAL, comp(&data1[2], &data2[2]));
   EXPECT_EQ(RESULT_GREATER, comp(&data1[0], &data2[1]));
   EXPECT_EQ(RESULT_GREATER, comp(&data1[1], &data2[2]));
-  EXPECT_EQ(RESULT_GREATER, comp(NULL, &data2[3]));
+  EXPECT_EQ(RESULT_GREATER, comp(nullptr, &data2[3]));
   EXPECT_EQ(RESULT_LESS, comp(&data1[1], &data2[0]));
   EXPECT_EQ(RESULT_LESS, comp(&data1[2], &data2[1]));
-  EXPECT_EQ(RESULT_LESS, comp(&data1[2], NULL));
-  EXPECT_EQ(RESULT_EQUAL_NULL, comp(NULL, NULL));
+  EXPECT_EQ(RESULT_LESS, comp(&data1[2], nullptr));
+  EXPECT_EQ(RESULT_EQUAL_NULL, comp(nullptr, nullptr));
 }
 
 class HasherTest : public testing::Test {};
@@ -474,7 +474,7 @@ TEST_F(HasherTest, ShouldHashIntegers) {
   const int32 data[] = { -5, 0, 4 };
   Hasher hasher = GetHasher(INT32, false);
   std::hash<int32> reference;
-  EXPECT_EQ(0xdeadbabe, hasher(NULL));
+  EXPECT_EQ(0xdeadbabe, hasher(nullptr));
   EXPECT_EQ(reference(data[0]), hasher(&data[0]));
   EXPECT_EQ(reference(data[1]), hasher(&data[1]));
   EXPECT_EQ(reference(data[2]), hasher(&data[2]));
@@ -487,7 +487,7 @@ inline size_t HashString(const StringPiece& s) {
 TEST_F(HasherTest, ShouldHashStrings) {
   const StringPiece data[] = { "bar", "barr", "foo" };
   Hasher hasher = GetHasher(STRING, false);
-  EXPECT_EQ(0xdeadbabe, hasher(NULL));
+  EXPECT_EQ(0xdeadbabe, hasher(nullptr));
   EXPECT_EQ(HashString(data[0]), hasher(&data[0]));
   EXPECT_EQ(HashString(data[1]), hasher(&data[1]));
   EXPECT_EQ(HashString(data[2]), hasher(&data[2]));
@@ -528,7 +528,7 @@ TEST_F(ColumnHasherTest, ShouldHashNotNullColumns) {
   const int32 data[] = { -5, 0, 4, 4 };
   ColumnHasher hasher = GetColumnHasher(INT32, false, true);
   size_t result[4];
-  hasher(data, bool_ptr(NULL), 4, result);
+  hasher(data, bool_ptr(nullptr), 4, result);
   std::hash<int32> reference;
   EXPECT_EQ(reference(data[0]), result[0]);
   EXPECT_EQ(reference(data[1]), result[1]);
@@ -545,7 +545,7 @@ struct TestFunctor {
 
 TEST(IntegerTypeSpecializationTest, TestReturnTypes) {
   TestFunctor functor;
-  typedef FailureOr<DataType> ResultType;
+  using ResultType = FailureOr<supersonic::DataType>;
 
   ResultType result =
       IntegerTypeSpecialization<ResultType, TestFunctor>(INT32, functor);
@@ -593,7 +593,7 @@ TEST(IntegerTypeSpecializationTest, TestReturnTypes) {
 
 TEST(NumericTypeSpecializationTest, TestReturnTypes) {
   TestFunctor functor;
-  typedef FailureOr<DataType> ResultType;
+  using ResultType = FailureOr<supersonic::DataType>;
 
   ResultType result =
       NumericTypeSpecialization<ResultType, TestFunctor>(INT32, functor);

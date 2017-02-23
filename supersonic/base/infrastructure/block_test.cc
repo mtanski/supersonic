@@ -50,8 +50,8 @@ TEST_F(BlockTest, CreatedBlockShouldBeEmptyAndValid) {
   EXPECT_EQ(2, block.column_count());
   EXPECT_FALSE(block.column(0).data().is_null());
   EXPECT_FALSE(block.column(1).data().is_null());
-  EXPECT_TRUE(block.is_null(0) != NULL);
-  EXPECT_TRUE(block.is_null(1) == NULL);
+  EXPECT_TRUE(block.is_null(0) != nullptr);
+  EXPECT_TRUE(block.is_null(1) == nullptr);
 }
 
 TEST_F(BlockTest, SuccessfulReallocShouldPreserveContent) {
@@ -139,7 +139,7 @@ TEST_F(BlockTest, OffsetsShouldCalculateCorrectly) {
 
 class ViewTest : public testing::Test {
  public:
-  void SetUp() {
+  void SetUp() override {
     test_block_.reset(BlockBuilder<STRING, INT32>()
         .AddRow("foo", 5)
         .AddRow("bar", 8)

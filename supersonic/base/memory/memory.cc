@@ -15,7 +15,7 @@
 
 #include "supersonic/base/memory/memory.h"
 
-#include <string.h>
+#include <cstring>
 
 #include <algorithm>
 #include "supersonic/utils/std_namespace.h"
@@ -40,13 +40,13 @@ Buffer::~Buffer() {
 #ifndef NDEBUG
   OverwriteWithPattern(reinterpret_cast<char*>(data_), size_, "BAD");
 #endif
-  if (allocator_ != NULL) allocator_->FreeInternal(this);
+  if (allocator_ != nullptr) allocator_->FreeInternal(this);
 }
 
 void BufferAllocator::LogAllocation(size_t requested,
                                     size_t minimal,
                                     Buffer* buffer) {
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     VLOG(0) << "Memory allocation failed in Supersonic. "
             << "Number of bytes requested: " << requested
             << ", minimal: " << minimal;
@@ -80,10 +80,10 @@ Buffer* HeapBufferAllocator::AllocateInternal(
   size_t attempted = requested;
   while (true) {
     data = (attempted == 0) ? &dummy_buffer[0] : Malloc(attempted);
-    if (data != NULL) {
+    if (data != nullptr) {
       return CreateBuffer(data, attempted, originator);
     }
-    if (attempted == minimal) return NULL;
+    if (attempted == minimal) return nullptr;
     attempted = minimal + (attempted - minimal - 1) / 2;
   }
 }
@@ -107,7 +107,7 @@ bool HeapBufferAllocator::ReallocateInternal(
         data = Malloc(attempted);
       }
     }
-    if (data != NULL) {
+    if (data != nullptr) {
       UpdateBuffer(data, attempted, buffer);
       return true;
     }
@@ -124,7 +124,7 @@ void* HeapBufferAllocator::Malloc(size_t size) {
   if (aligned_mode_) {
     void* data;
     if (posix_memalign(&data, 16, ((size + 15) / 16) * 16)) {
-       return NULL;
+       return nullptr;
     }
     return data;
   } else {
@@ -145,7 +145,7 @@ void* HeapBufferAllocator::Realloc(void* previousData, size_t previousSize,
       free(previousData);
       return data;
     } else {
-      return NULL;
+      return nullptr;
     }
   } else {
     return realloc(previousData, newSize);
@@ -157,7 +157,7 @@ Buffer* ClearingBufferAllocator::AllocateInternal(size_t requested,
                                                   BufferAllocator* originator) {
   Buffer* buffer = DelegateAllocate(delegate_, requested, minimal,
                                     originator);
-  if (buffer != NULL) memset(buffer->data(), 0, buffer->size());
+  if (buffer != nullptr) memset(buffer->data(), 0, buffer->size());
   return buffer;
 }
 
@@ -165,7 +165,7 @@ bool ClearingBufferAllocator::ReallocateInternal(size_t requested,
                                                  size_t minimal,
                                                  Buffer* buffer,
                                                  BufferAllocator* originator) {
-  size_t offset = (buffer != NULL ? buffer->size() : 0);
+  size_t offset = (buffer != nullptr ? buffer->size() : 0);
   bool success = DelegateReallocate(delegate_, requested, minimal, buffer,
                                     originator);
   if (success && buffer->size() > offset) {
@@ -187,12 +187,12 @@ Buffer* MediatingBufferAllocator::AllocateInternal(
   size_t granted;
   if (requested > 0) {
     granted = mediator_->Allocate(requested, minimal);
-    if (granted < minimal) return NULL;
+    if (granted < minimal) return nullptr;
   } else {
     granted = 0;
   }
   Buffer* buffer = DelegateAllocate(delegate_, granted, minimal, originator);
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     mediator_->Free(granted);
   } else if (buffer->size() < granted) {
     mediator_->Free(granted - buffer->size());
@@ -234,7 +234,7 @@ Buffer* MemoryStatisticsCollectingBufferAllocator::AllocateInternal(
     const size_t minimal,
     BufferAllocator* const originator) {
   Buffer* buffer = DelegateAllocate(delegate_, requested, minimal, originator);
-  if (buffer != NULL) {
+  if (buffer != nullptr) {
     memory_stats_collector_->AllocatedMemoryBytes(buffer->size());
   } else {
     memory_stats_collector_->RefusedMemoryBytes(minimal);

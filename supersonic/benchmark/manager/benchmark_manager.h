@@ -22,6 +22,7 @@
 #define SUPERSONIC_BENCHMARK_MANAGER_BENCHMARK_MANAGER_H_
 
 #include <memory>
+#include <utility>
 
 #include "supersonic/benchmark/infrastructure/benchmark_listener.h"
 #include "supersonic/benchmark/infrastructure/cursor_statistics.h"
@@ -48,9 +49,9 @@ struct GraphVisualisationOptions {
   explicit GraphVisualisationOptions(Destination destination)
       : destination(destination) {}
 
-  GraphVisualisationOptions(Destination destination, const string& file_name)
+  GraphVisualisationOptions(Destination destination, string file_name)
       : destination(destination),
-        file_name(file_name) {}
+        file_name(std::move(file_name)) {}
 
   Destination destination;
   string file_name;

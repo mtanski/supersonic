@@ -38,7 +38,7 @@ class BenchmarkTreeNode {
   explicit BenchmarkTreeNode(CursorStatistics* cursor_statistics)
     : cursor_statistics_(cursor_statistics) {}
 
-  virtual ~BenchmarkTreeNode() {}
+  virtual ~BenchmarkTreeNode() = default;
 
   // Calls GatherData() on all CursorStatistics objects in the entire tree
   // recursively.

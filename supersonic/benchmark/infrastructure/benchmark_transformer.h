@@ -35,7 +35,7 @@ class BenchmarkListener;
 // already owned by either other cursors, or some other entity.
 class CursorWithBenchmarkListener {
  public:
-  CursorWithBenchmarkListener() : cursor_(NULL) {}
+  CursorWithBenchmarkListener() = default;
 
   // Takes ownership of the listener, does not take ownership of the cursor.
   CursorWithBenchmarkListener(Cursor* cursor, BenchmarkListener* listener)
@@ -53,13 +53,12 @@ class CursorWithBenchmarkListener {
 
  private:
   std::unique_ptr<BenchmarkListener> listener_;
-  Cursor* cursor_;
+  Cursor* cursor_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(CursorWithBenchmarkListener);
 };
 
-typedef CursorTransformerWithVectorHistory<CursorWithBenchmarkListener>
-CursorTransformerWithBenchmarkHistory;
+using CursorTransformerWithBenchmarkHistory = CursorTransformerWithVectorHistory<supersonic::CursorWithBenchmarkListener>;
 
 // Spy wrapping benchmark cursor transformer.
 CursorTransformerWithBenchmarkHistory* BenchmarkSpyTransformer();

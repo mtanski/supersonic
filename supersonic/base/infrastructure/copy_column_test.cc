@@ -15,7 +15,7 @@
 
 #include "supersonic/base/infrastructure/copy_column.h"
 
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 namespace supersonic {using std::string; }
 
@@ -51,7 +51,7 @@ class CopyColumnTest : public testing::Test {
       const rowid_t* input_row_ids,
       RowSelectorType row_selector_type,
       bool deep_copy) {
-    ASSERT_TRUE(input_row_ids != NULL || row_selector_type == NO_SELECTOR);
+    ASSERT_TRUE(input_row_ids != nullptr || row_selector_type == NO_SELECTOR);
     ColumnCopier copy_column_func = ResolveCopyColumnFunction(
         schema_.attribute(0).type(),
         schema_.attribute(1).nullability(),
@@ -120,7 +120,7 @@ class CopyColumnTest : public testing::Test {
         for (rowcount_t i = 0; i < block_->row_capacity(); i++, p++) {
           string s = StringPrintf("%08" GG_LL_FORMAT "d", i);
           const char* location = arena->AddStringPieceContent(s);
-          ASSERT_TRUE(location != NULL);
+          ASSERT_TRUE(location != nullptr);
           p->set(location, s.length());
         }
         break;
@@ -136,7 +136,7 @@ TEST_F(CopyColumnTest,
        BasicTestInputIsNotNullableOutputIsNotNullable) {
   SetUpColumnPair(INT64, NOT_NULLABLE, NOT_NULLABLE);
   CopyInputColumnToOutputColumn(block_->row_capacity(), 0,
-                                NULL, NO_SELECTOR, true);
+                                nullptr, NO_SELECTOR, true);
   EXPECT_VIEWS_EQUAL(*input_, *output_);
 }
 
@@ -147,7 +147,7 @@ TEST_F(CopyColumnTest,
   bit_pointer::FillWithTrue(block_->mutable_column(1)->mutable_is_null(),
                             block_->row_capacity());
   CopyInputColumnToOutputColumn(block_->row_capacity(), 0,
-                                NULL, NO_SELECTOR, true);
+                                nullptr, NO_SELECTOR, true);
   EXPECT_VIEWS_EQUAL(*input_, *output_);
 }
 
@@ -158,7 +158,7 @@ TEST_F(CopyColumnTest,
   bit_pointer::FillWithTrue(block_->mutable_column(1)->mutable_is_null(),
                             block_->row_capacity());
   CopyInputColumnToOutputColumn(block_->row_capacity() - 4, 4,
-                                NULL, NO_SELECTOR, true);
+                                nullptr, NO_SELECTOR, true);
   for (int i = 0; i < block_->row_capacity() - 4; ++i) {
     EXPECT_EQ(block_->view().column(0).typed_data<INT64>()[i],
               block_->view().column(1).typed_data<INT64>()[i+4]);
@@ -186,7 +186,7 @@ TEST_F(CopyColumnTest,
        ShallowCopy) {
   SetUpColumnPair(STRING, NOT_NULLABLE, NOT_NULLABLE);
   CopyInputColumnToOutputColumn(block_->row_capacity(), 0,
-                                NULL, NO_SELECTOR, false);
+                                nullptr, NO_SELECTOR, false);
   EXPECT_VIEWS_EQUAL(*input_, *output_);
   for (int i = 0; i < input_->row_count(); ++i) {
     // Also check if StringPieces are pointing to the same string.
@@ -211,7 +211,7 @@ TEST_F(CopyColumnTest, LimitedMemoryShouldCausePartialSuccess) {
   ASSERT_TRUE(result_block.Reallocate(block_->row_capacity()));
   EXPECT_EQ(512, memory_limit.GetQuota() - memory_limit.GetUsage());
   const rowcount_t result = copy_column_func(block_->row_capacity(),
-                                             input_->column(0), NULL, 0,
+                                             input_->column(0), nullptr, 0,
                                              result_block.  mutable_column(0));
   EXPECT_EQ(64, result);
 }

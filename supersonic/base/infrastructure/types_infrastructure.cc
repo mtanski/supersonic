@@ -15,7 +15,7 @@
 
 #include "supersonic/base/infrastructure/types_infrastructure.h"
 
-#include <time.h>
+#include <ctime>
 
 #include <cmath>
 #include <limits>
@@ -215,7 +215,7 @@ bool ParseDateTime(const string& value,
   WallTime time = 0;
   if (!WallTime_Parse_Timezone(value.c_str(),
                                format.c_str(),
-                               NULL,  // no default value for missing fields
+                               nullptr,  // no default value for missing fields
                                false,  // use UTC,
                                &time)) {
     return false;
@@ -264,7 +264,7 @@ bool ParseTyped<DATA_TYPE>(const char* value, DataType* target) {
 
 template<DataType type>
 bool DefaultParser(const char* value, const VariantPointer target) {
-  DCHECK(value != NULL);
+  DCHECK(value != nullptr);
   DCHECK(!target.is_null());
   return ParseTyped<type>(value, target.as<type>());
 }
@@ -331,7 +331,7 @@ struct Equal {
       return op(left.as<left_type>(), right.as<right_type>());
     }
   };
-  typedef EqualityComparator RuntimeFunction;
+  using RuntimeFunction = EqualityComparator;
 };
 
 // Helper base class for Bind on 'inequality' functors. See
@@ -360,7 +360,7 @@ struct AscendingSortComparator {
   struct Bind : public Inequality<left_type, right_type,
                                   left_not_null, right_not_null,
                                   false, false, true> {};
-  typedef InequalityComparator RuntimeFunction;
+  using RuntimeFunction = InequalityComparator;
 };
 
 // Generates functions for terminal (last) elements in sort comparators,
@@ -372,7 +372,7 @@ struct AscendingSortTerminalComparator {
   struct Bind : public Inequality<left_type, right_type,
                                   left_not_null, right_not_null,
                                   false, true, true> {};
-  typedef InequalityComparator RuntimeFunction;
+  using RuntimeFunction = InequalityComparator;
 };
 
 // Generates functions for non-terminal elements in sort comparators,
@@ -384,7 +384,7 @@ struct DescendingSortComparator {
   struct Bind : public Inequality<left_type, right_type,
                                   left_not_null, right_not_null,
                                   true, false, true> {};
-  typedef InequalityComparator RuntimeFunction;
+  using RuntimeFunction = InequalityComparator;
 };
 
 // Generates functions for terminal (last) elements in sort comparators,
@@ -396,7 +396,7 @@ struct DescendingSortTerminalComparator {
   struct Bind : public Inequality<left_type, right_type,
                                   left_not_null, right_not_null,
                                   true, true, true> {};
-  typedef InequalityComparator RuntimeFunction;
+  using RuntimeFunction = InequalityComparator;
 };
 
 // Generates functions for comparators in merge-joins, ascending order.
@@ -408,7 +408,7 @@ struct AscendingMergeJoinComparator {
   struct Bind : public Inequality<left_type, right_type,
                                   left_not_null, right_not_null,
                                   false, false, false> {};
-  typedef InequalityComparator RuntimeFunction;
+  using RuntimeFunction = InequalityComparator;
 };
 
 // Generates functions for comparators in merge-joins, descending order.
@@ -420,7 +420,7 @@ struct DescendingMergeJoinComparator {
   struct Bind : public Inequality<left_type, right_type,
                                   left_not_null, right_not_null,
                                   true, false, false> {};
-  typedef InequalityComparator RuntimeFunction;
+  using RuntimeFunction = InequalityComparator;
 };
 
 // The successive resolve magic below.

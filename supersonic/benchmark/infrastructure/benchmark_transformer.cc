@@ -42,7 +42,7 @@ class SpyCursorBenchmarkTransformer
   // available to retrieve from the history. The entry inserted into the history
   // will take ownership of the listener, but not of the cursor. The transformer
   // takes ownership of the entries.
-  virtual Cursor* Transform(Cursor* cursor) {
+  Cursor* Transform(Cursor* cursor) override {
     string id;
     cursor->AppendDebugDescription(&id);
     std::unique_ptr<BenchmarkListener> listener(CreateBenchmarkListener());

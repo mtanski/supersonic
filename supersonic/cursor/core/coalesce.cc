@@ -15,7 +15,7 @@
 
 #include "supersonic/cursor/core/coalesce.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <memory>
 #include <vector>
@@ -55,23 +55,22 @@ class CoalesceCursor : public BasicCursor {
                  const BoundMultiSourceProjector* projector)
       : BasicCursor(CHECK_NOTNULL(projector)->result_schema()),
         projector_(projector) {
-    for (int i = 0; i < children.size(); ++i) {
-      Cursor* child = children[i];
+    for (auto child : children) {
       DCHECK(child);
       inputs_.push_back(new CursorIterator(child));
     }
   }
 
-  virtual ResultView Next(rowcount_t max_row_count);
-  virtual bool IsWaitingOnBarrierSupported() const { return true; }
+  ResultView Next(rowcount_t max_row_count) override;
+  bool IsWaitingOnBarrierSupported() const override { return true; }
 
-  virtual void ApplyToChildren(CursorTransformer* transformer) {
-    for (int i = 0; i < inputs_.size(); ++i) {
-      inputs_[i]->ApplyToCursor(transformer);
+  void ApplyToChildren(CursorTransformer* transformer) override {
+    for (auto &input: inputs_) {
+      input->ApplyToCursor(transformer);
     }
   }
 
-  virtual CursorId GetCursorId() const { return COALESCE; }
+  CursorId GetCursorId() const override { return COALESCE; }
 
  private:
   util::gtl::PointerVector<CursorIterator> inputs_;
@@ -110,12 +109,12 @@ ResultView CoalesceCursor::Next(rowcount_t max_row_count) {
 
 class CoalesceOperation : public BasicOperation {
  public:
-  virtual ~CoalesceOperation() {}
+  ~CoalesceOperation() override = default;
 
   explicit CoalesceOperation(const vector<Operation*>& children)
       : BasicOperation(children) {}
 
-  virtual FailureOrOwned<Cursor> CreateCursor() const {
+  FailureOrOwned<Cursor> CreateCursor() const override {
     vector<Cursor*> child_cursors(children_count());
     ElementDeleter child_cursors_deleter(&child_cursors);
     for (int i = 0; i < children_count(); ++i) {
@@ -142,7 +141,7 @@ FailureOrOwned<Cursor> BoundCoalesce(const vector<Cursor*>& children) {
     return BoundGenerate(0);
   }
   if (children.size() == 1) {
-    DCHECK(children[0] != NULL);
+    DCHECK(children[0] != nullptr);
     return Success(children[0]);
   }
 
@@ -150,7 +149,7 @@ FailureOrOwned<Cursor> BoundCoalesce(const vector<Cursor*>& children) {
   vector<const TupleSchema*> child_schemas;
   for (int i = 0; i < children.size(); ++i) {
     Cursor* child = children[i];
-    DCHECK(child != NULL);
+    DCHECK(child != nullptr);
     child_schemas.push_back(&child->schema());
     all_attributes_projector.add(i, ProjectAllAttributes());
   }

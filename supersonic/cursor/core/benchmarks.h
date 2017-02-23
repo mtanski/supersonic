@@ -38,7 +38,7 @@ class Cursor;
 class OperationBenchmarkListener {
  public:
   // Virtual desctuctor.
-  virtual ~OperationBenchmarkListener() {}
+  virtual ~OperationBenchmarkListener() = default;
 
   // Called when benchmark is started. current_time is in microseconds.
   virtual void OnBenchmarkStarted(uint64 current_time) = 0;
@@ -67,23 +67,23 @@ class BenchmarkedOperation : public Operation {
     CHECK_NOTNULL(benchmark_listener);
   }
 
-  virtual ~BenchmarkedOperation() {}
+  ~BenchmarkedOperation() override = default;
 
   // Returns wrapped cursor.
-  virtual FailureOrOwned<Cursor> CreateCursor() const;
+  FailureOrOwned<Cursor> CreateCursor() const override;
 
-  virtual void SetBufferAllocator(BufferAllocator* buffer_allocator,
-                                  bool cascade_to_children) {
+  void SetBufferAllocator(BufferAllocator* buffer_allocator,
+                                  bool cascade_to_children) override {
     operation_->SetBufferAllocator(buffer_allocator, cascade_to_children);
   }
 
-  virtual void SetBufferAllocatorWhereUnset(BufferAllocator* buffer_allocator,
-                                            bool cascade_to_children) {
+  void SetBufferAllocatorWhereUnset(BufferAllocator* buffer_allocator,
+                                            bool cascade_to_children) override {
     operation_->SetBufferAllocatorWhereUnset(buffer_allocator,
                                              cascade_to_children);
   }
 
-  virtual void AppendDebugDescription(string* const target) const {
+  void AppendDebugDescription(string* const target) const override {
     target->append("Benchmarked(");
     operation_->AppendDebugDescription(target);
     target->append(")");

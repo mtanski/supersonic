@@ -15,7 +15,7 @@
 
 #include "supersonic/base/infrastructure/view_copier.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include "supersonic/utils/scoped_ptr.h"
 #include "supersonic/base/infrastructure/block.h"
@@ -34,7 +34,7 @@ namespace supersonic {
 
 class ViewCopierTest : public testing::Test {
  public:
-  void SetUp() {
+  void SetUp() override {
     // BlockBuilder should set 3rd column as not nullable.
     input_.reset(
         BlockBuilder<INT64, STRING, STRING>().

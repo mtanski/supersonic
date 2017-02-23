@@ -68,7 +68,7 @@ void FindNotNullKeys(const View& view, bool_ptr is_not_null) {
   bit_pointer::FillWithTrue(is_not_null, view.row_count());
   for (int c = 0; c < view.column_count(); ++c) {
     bool_const_ptr column_is_null = view.column(c).is_null();
-    if (column_is_null != NULL) {
+    if (column_is_null != nullptr) {
       vector_logic::AndNot(column_is_null, is_not_null,
                            view.row_count(), is_not_null);
     }
@@ -92,7 +92,7 @@ TupleSchema WithAllColumnsNullable(const TupleSchema& schema) {
 // interface. It does so by materializing the entire cursor in memory and
 // building a hash index on top of it.
 template <KeyUniqueness key_uniqueness>
-class HashIndexOnMaterializedCursor : public LookupIndex {
+class HashIndexOnMaterializedCursor final : public LookupIndex {
  public:
   HashIndexOnMaterializedCursor(
       JoinType join_type,
@@ -151,7 +151,7 @@ class HashIndexOnMaterializedCursor : public LookupIndex {
 };
 
 template <KeyUniqueness key_uniqueness>
-class HashIndexMaterializer : public LookupIndexBuilder {
+class HashIndexMaterializer final : public LookupIndexBuilder {
  public:
   static FailureOrOwned<LookupIndexBuilder> Create(
       Cursor* input,
@@ -172,10 +172,10 @@ class HashIndexMaterializer : public LookupIndexBuilder {
         index_->MaterializeInputAndBuildIndex(input_.get());
     PROPAGATE_ON_FAILURE(materialized);
     if (materialized.get()) {
-      input_.reset(NULL);  // Releases resources held by the input.
+      input_.reset(nullptr);  // Releases resources held by the input.
       return Success(index_.release());
     } else {
-      return Success(static_cast<LookupIndex*>(NULL));
+      return Success(static_cast<LookupIndex*>(nullptr));
     }
   }
 
@@ -207,7 +207,7 @@ class HashIndexMaterializer : public LookupIndexBuilder {
 };
 
 // The actual hash join implementation.
-class HashJoinCursor : public Cursor {
+class HashJoinCursor final : public Cursor {
  public:
   // Takes ownership of lhs_key_selector.
   HashJoinCursor(
@@ -217,7 +217,7 @@ class HashJoinCursor : public Cursor {
       const BoundMultiSourceProjector& result_projector,
       LookupIndexBuilder* rhs,
       Cursor* lhs);
-  virtual ~HashJoinCursor() { }
+  ~HashJoinCursor() override = default;
 
   // Allocates index' internal block and reads input into it.
   FailureOrVoid Init();
@@ -319,7 +319,7 @@ FailureOrOwned<Cursor> HashJoinOperation::CreateCursor() const {
   FailureOrOwned<Cursor> provided_rhs_cursor = rhs_operation->CreateCursor();
   PROPAGATE_ON_FAILURE(provided_rhs_cursor);
 
-  DCHECK(rhs_key_selector_.get() != NULL);
+  DCHECK(rhs_key_selector_.get() != nullptr);
   FailureOrOwned<const BoundSingleSourceProjector>
       bound_rhs_key_selector_result =
       rhs_key_selector_->Bind(provided_rhs_cursor->schema());
@@ -378,7 +378,7 @@ HashJoinCursor::HashJoinCursor(
       lhs_result_(lhs_result_projector_.result_schema(), allocator),
       lhs_result_copier_(&lhs_result_projector_, false),
       result_view_(result_projector.result_schema()),
-      lhs_view_(NULL),
+      lhs_view_(nullptr),
       lookup_query_(lhs_key_selector_->result_schema()) {
   DCHECK(lhs_key_selector_->source_schema().EqualByType(lhs->schema()));
 
@@ -411,7 +411,7 @@ ResultView HashJoinCursor::Next(rowcount_t max_row_count) {
   // Rhs rows are projected into result (without actual copying). The matching
   // is done based on query_ids().
   for ( ;; ) {
-    if (matches_.get() != NULL) {
+    if (matches_.get() != nullptr) {
       // A case where there are (possibly) some leftover views of matches.
       // This happens every time MultiLookup() returns a non-NULL cursor, as
       // after the first Next() on that cursor it's impossible to tell whether
@@ -455,15 +455,15 @@ ResultView HashJoinCursor::Next(rowcount_t max_row_count) {
       } else if (rhs_result.is_eos()) {
         // The cursor of matches is exhausted. The main loop will advance to
         // the next lhs view.
-        matches_.reset(NULL);
-        lhs_view_ = NULL;
+        matches_.reset(nullptr);
+        lhs_view_ = nullptr;
       } else {
         // TODO(user): handle WAITING_ON_BARRIER.
         LOG(FATAL) << "Unexpected iteration result";
       }
     }
 
-    if (lhs_view_ == NULL) {
+    if (lhs_view_ == nullptr) {
       ResultView lhs_result = lhs_->Next(Cursor::kDefaultRowCount);
       PROPAGATE_ON_FAILURE(lhs_result);
       // Early termination if lhs is empty.
@@ -477,16 +477,16 @@ ResultView HashJoinCursor::Next(rowcount_t max_row_count) {
       }
     }
 
-    if (rhs_.get() == NULL) {
+    if (rhs_.get() == nullptr) {
       // Right-hand side not yet materialized.
       FailureOrOwned<LookupIndex> result = rhs_builder_->Build();
       PROPAGATE_ON_FAILURE(result);
       rhs_.reset(result.release());
-      if (rhs_.get() == NULL) {
+      if (rhs_.get() == nullptr) {
         // Still not materialized.
         return ResultView::WaitingOnBarrier();
       } else {
-        rhs_builder_.reset(NULL);
+        rhs_builder_.reset(nullptr);
         DCHECK(lhs_key_selector_->result_schema().EqualByType(
             rhs_->key_selector().result_schema()));
         // Early termination if rhs is empty in the INNER join.
@@ -498,7 +498,7 @@ ResultView HashJoinCursor::Next(rowcount_t max_row_count) {
 
     // If we got here, we have new data in lhs_view_, and the rhs is
     // materialized.
-    DCHECK(lhs_view_ != NULL);
+    DCHECK(lhs_view_ != nullptr);
     DCHECK_GT(lhs_view_->row_count(), 0);
     // Set up lookup_query_ with lhs key columns.
     lhs_key_selector_->Project(*lhs_view_, &lookup_query_);
@@ -508,7 +508,7 @@ ResultView HashJoinCursor::Next(rowcount_t max_row_count) {
         rhs_->MultiLookup(&lookup_query_);
     PROPAGATE_ON_FAILURE(multi_lookup_result);
     matches_.reset(multi_lookup_result.release());
-    if (matches_.get() == NULL) {
+    if (matches_.get() == nullptr) {
       // Right-hand-side encountered a barrier during materialization.
       return ResultView::WaitingOnBarrier();
     }
@@ -628,10 +628,9 @@ MaterializeInputAndBuildIndex(Cursor* input) {
 // HashIndexOnMaterializedCursor.
 template <KeyUniqueness key_uniqueness>
 template <JoinType join_type>
-class HashIndexOnMaterializedCursor<key_uniqueness>::ResultCursor
+class HashIndexOnMaterializedCursor<key_uniqueness>::ResultCursor final
     : public LookupIndexCursor {
-  typedef typename HashIndexOnMaterializedCursor<key_uniqueness>::RowHashSetType
-    RowHashSetType;
+  using RowHashSetType = typename HashIndexOnMaterializedCursor<key_uniqueness>::RowHashSetType;
 
  public:
   // result_block and query_ids are placeholders allocated by the caller.
@@ -639,8 +638,8 @@ class HashIndexOnMaterializedCursor<key_uniqueness>::ResultCursor
       const RowHashSetType& index, const View& query,
       Block* result_block, rowid_t* query_ids);
 
-  const TupleSchema& schema() const { return result_block_->schema(); }
-  ResultLookupIndexView Next(rowcount_t max_row_count);
+  const TupleSchema& schema() const override { return result_block_->schema(); }
+  ResultLookupIndexView Next(rowcount_t max_row_count) override;
 
   void AppendDebugDescription(string* target) const;
 

@@ -18,8 +18,8 @@
 #ifndef SUPERSONIC_BASE_MEMORY_ARENA_H_
 #define SUPERSONIC_BASE_MEMORY_ARENA_H_
 
-#include <stddef.h>
-#include <string.h>
+#include <cstddef>
+#include <cstring>
 
 #include <memory>
 #include <new>
@@ -116,14 +116,14 @@ class Arena {
 // (The code is shamelessly stolen from base/arena-inl.h).
 template<class T> class ArenaAllocator {
  public:
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
+  using value_type = T;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
 
-  typedef T* pointer;
-  typedef const T* const_pointer;
-  typedef T& reference;
-  typedef const T& const_reference;
+  using pointer = T *;
+  using const_pointer = const T *;
+  using reference = T &;
+  using const_reference = const T &;
   pointer index(reference r) const  { return &r; }
   const_pointer index(const_reference r) const  { return &r; }
   size_type max_size() const  { return size_t(-1) / sizeof(T); }
@@ -132,9 +132,9 @@ template<class T> class ArenaAllocator {
     CHECK_NOTNULL(arena_);
   }
 
-  ~ArenaAllocator() { }
+  ~ArenaAllocator() = default;
 
-  pointer allocate(size_type n, allocator<void>::const_pointer /*hint*/ = 0) {
+  pointer allocate(size_type n, allocator<void>::const_pointer /*hint*/ = nullptr) {
     return reinterpret_cast<T*>(arena_->AllocateBytes(n * sizeof(T)));
   }
 
@@ -147,7 +147,7 @@ template<class T> class ArenaAllocator {
   void destroy(pointer p) { p->~T(); }
 
   template<class U> struct rebind {
-    typedef ArenaAllocator<U> other;
+    using other = ArenaAllocator<U>;
   };
 
   template<class U> ArenaAllocator(const ArenaAllocator<U>& other)
@@ -183,7 +183,7 @@ class Arena::Component {
       offset_ += size;
       return destination;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -200,7 +200,7 @@ class Arena::Component {
 
 inline const char* Arena::AddStringPieceContent(const StringPiece& value) {
   void* destination = AllocateBytes(value.size());
-  if (destination == NULL) return NULL;
+  if (destination == nullptr) return nullptr;
   memcpy(destination, value.data(), value.size());
   return static_cast<const char*>(destination);
 }

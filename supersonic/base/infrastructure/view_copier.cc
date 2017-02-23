@@ -17,7 +17,7 @@
 
 #include "supersonic/base/infrastructure/view_copier.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <glog/logging.h>
 #include "supersonic/utils/logging-inl.h"
@@ -36,12 +36,12 @@ BaseViewCopier::BaseViewCopier(const TupleSchema& input_schema,
   CreateColumnCopiers(input_schema, output_schema, row_selector_type,
                       deep_copy);
   source_schema_ =
-      (projector != NULL) ? projector->source_schema() : input_schema;
+      (projector != nullptr) ? projector->source_schema() : input_schema;
   result_schema_ = output_schema;
 }
 
 ViewCopier::ViewCopier(const TupleSchema& schema, bool deep_copy)
-    : BaseViewCopier(schema, schema, NULL, NO_SELECTOR, deep_copy) {}
+    : BaseViewCopier(schema, schema, nullptr, NO_SELECTOR, deep_copy) {}
 
 ViewCopier::ViewCopier(const BoundSingleSourceProjector* projector,
                        bool deep_copy)
@@ -51,13 +51,13 @@ ViewCopier::ViewCopier(const BoundSingleSourceProjector* projector,
 SelectiveViewCopier::SelectiveViewCopier(
     const TupleSchema& schema,
     bool deep_copy)
-    : BaseViewCopier(schema, schema, NULL, INPUT_SELECTOR, deep_copy) {}
+    : BaseViewCopier(schema, schema, nullptr, INPUT_SELECTOR, deep_copy) {}
 
 SelectiveViewCopier::SelectiveViewCopier(
     const TupleSchema& source_schema,
     const TupleSchema& result_schema,
     bool deep_copy)
-    : BaseViewCopier(source_schema, result_schema, NULL, INPUT_SELECTOR,
+    : BaseViewCopier(source_schema, result_schema, nullptr, INPUT_SELECTOR,
                      deep_copy) {}
 
 SelectiveViewCopier::SelectiveViewCopier(
@@ -90,7 +90,7 @@ rowcount_t BaseViewCopier::Copy(
   DCHECK(TupleSchema::AreEqual(source_schema_, input_view.schema(), false))
       << "Expected: " << source_schema_.GetHumanReadableSpecification() << ", "
       << "Got: " << input_view.schema().GetHumanReadableSpecification();
-  DCHECK(output_block != NULL) << "Missing output for view copy";
+  DCHECK(output_block != nullptr) << "Missing output for view copy";
   DCHECK(TupleSchema::AreEqual(result_schema_, output_block->schema(), false))
       << "Expected: " << result_schema_.GetHumanReadableSpecification() << ", "
       << "Got: " << output_block->schema().GetHumanReadableSpecification();
@@ -112,7 +112,7 @@ rowcount_t ViewCopier::Copy(
     const View& input_view,
     const rowcount_t output_offset,
     Block* output_block) const {
-  return BaseViewCopier::Copy(row_count, input_view, NULL, output_offset,
+  return BaseViewCopier::Copy(row_count, input_view, nullptr, output_offset,
                               output_block);
 }
 

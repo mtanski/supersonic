@@ -112,17 +112,13 @@ inline bool operator==(const uint128& lhs, const uint128& rhs) {
 inline bool operator!=(const uint128& lhs, const uint128& rhs) {
   return !(lhs == rhs);
 }
-inline uint128& uint128::operator=(const uint128& b) {
-  lo_ = b.lo_;
-  hi_ = b.hi_;
-  return *this;
-}
+inline uint128& uint128::operator=(const uint128& b) = default;
 
 inline UINT128_CONSTEXPR uint128::uint128() : lo_(0), hi_(0) {}
 inline UINT128_CONSTEXPR uint128::uint128(uint64 top, uint64 bottom)
     : lo_(bottom), hi_(top) {}
 inline UINT128_CONSTEXPR uint128::uint128(const uint128& v)
-    : lo_(v.lo_), hi_(v.hi_) {}
+    = default;
 inline UINT128_CONSTEXPR uint128::uint128(const uint128_pod& v)
     : lo_(v.lo), hi_(v.hi) {}
 inline UINT128_CONSTEXPR uint128::uint128(uint64 bottom)

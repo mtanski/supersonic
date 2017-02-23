@@ -48,14 +48,14 @@ class ResultView {
         status_(failure.exception->return_code()) {}
 
   // A result that indicates END_OF_INPUT.
-  static ResultView EOS() { return ResultView(NULL, END_OF_INPUT); }
+  static ResultView EOS() { return ResultView(nullptr, END_OF_INPUT); }
 
   // A result that indicates BEFORE_INPUT.
-  static ResultView BOS() { return ResultView(NULL, BEFORE_INPUT); }
+  static ResultView BOS() { return ResultView(nullptr, BEFORE_INPUT); }
 
   // A result that indicates WAITING_ON_BARRIER.
   static ResultView WaitingOnBarrier() {
-    return ResultView(NULL, WAITING_ON_BARRIER);
+    return ResultView(nullptr, WAITING_ON_BARRIER);
   }
 
   // A result that indicates a success, with a valid value.
@@ -132,7 +132,7 @@ class Cursor {
  public:
   static const rowcount_t kDefaultRowCount = 1024;
 
-  virtual ~Cursor() {}
+  virtual ~Cursor() = default;
 
   // Returns the schema associated with this cursor.
   virtual const TupleSchema& schema() const = 0;
@@ -222,7 +222,7 @@ class Cursor {
 
  protected:
   // To allow instantiation in subclasses.
-  Cursor() {}
+  Cursor() = default;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Cursor);

@@ -16,7 +16,7 @@
 
 #include "supersonic/base/infrastructure/bit_pointers.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "supersonic/utils/exception/failureor.h"
 #include "supersonic/base/exception/exception.h"
@@ -30,11 +30,11 @@ namespace bit_pointer {
 
 bool bit_array::Reallocate(size_t bit_capacity, BufferAllocator* allocator) {
   size_t bytes = ((bit_capacity + 127) / 128) * 16;
-  if (data_buffer_.get() == NULL) {
+  if (data_buffer_.get() == nullptr) {
     data_buffer_.reset(allocator->Allocate(bytes));
-    return data_buffer_.get() != NULL;
+    return data_buffer_.get() != nullptr;
   } else {
-    return allocator->Reallocate(bytes, data_buffer_.get()) != NULL;
+    return allocator->Reallocate(bytes, data_buffer_.get()) != nullptr;
   }
 }
 
@@ -51,11 +51,11 @@ FailureOrVoid bit_array::TryReallocate(size_t bit_capacity,
 
 bool boolean_array::Reallocate(size_t bytes_capacity,
                                BufferAllocator* allocator) {
-  if (data_buffer_.get() == NULL) {
+  if (data_buffer_.get() == nullptr) {
     data_buffer_.reset(allocator->Allocate(bytes_capacity));
-    return data_buffer_.get() != NULL;
+    return data_buffer_.get() != nullptr;
   } else {
-    return allocator->Reallocate(bytes_capacity, data_buffer_.get()) != NULL;
+    return allocator->Reallocate(bytes_capacity, data_buffer_.get()) != nullptr;
   }
 }
 
@@ -179,8 +179,8 @@ void FillFromAligned(bit_ptr dest, bit_const_ptr source,
 }
 
 void FillFrom(bit_ptr dest, bit_const_ptr source, size_t bit_count) {
-  DCHECK(dest != NULL);
-  DCHECK(source != NULL);
+  DCHECK(dest != nullptr);
+  DCHECK(source != nullptr);
   if ((dest.shift() & 7) == (source.shift() & 7)) {
     FillFromAligned(dest, source, bit_count);
     return;

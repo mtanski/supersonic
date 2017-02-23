@@ -22,7 +22,7 @@
 #ifndef SUPERSONIC_BASE_INFRASTRUCTURE_BLOCK_H_
 #define SUPERSONIC_BASE_INFRASTRUCTURE_BLOCK_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <string>
 namespace supersonic {using std::string; }
@@ -123,14 +123,14 @@ class Column {
   // A convenience method that returns the is_null vector shifted by the
   // specified offset, or NULL if the is_null vector == NULL.
   bool_const_ptr is_null_plus_offset(rowcount_t offset) const {
-    return is_null() == NULL ? bool_const_ptr(NULL) : is_null() + offset;
+    return is_null() == nullptr ? bool_const_ptr(nullptr) : is_null() + offset;
   }
 
   // Updates the column to point to a new place.
   // Ownership of data and is_null stays with the callee.
   void Reset(VariantConstPointer data, bool_const_ptr is_null) {
     CheckInitialized();
-    DCHECK(is_null == NULL || attribute().is_nullable())
+    DCHECK(is_null == nullptr || attribute().is_nullable())
         << "Attempt to use is_null vector for a non-nullable attribute "
         << "'" << attribute().name() << "'";
     data_ = data;
@@ -169,18 +169,18 @@ class Column {
  private:
   // Only the view to create an uninitialized Column.
   friend class View;
-  Column() : attribute_(NULL), type_info_(NULL), data_(NULL), is_null_(NULL) {}
+  Column() : attribute_(nullptr), type_info_(nullptr), data_(nullptr), is_null_(nullptr) {}
 
   // Must be called before use, if the no-arg constructor was used to create.
   // Ownership of the attribute remains with the caller.
   void Init(const Attribute* attribute) {
-    CHECK(type_info_ == NULL) << "Column already initialized";
+    CHECK(type_info_ == nullptr) << "Column already initialized";
     attribute_ = attribute;
     type_info_ = &GetTypeInfo(attribute_->type());
   }
 
   void CheckInitialized() const {
-    DCHECK(type_info_ != NULL) << "Column not initialized";
+    DCHECK(type_info_ != nullptr) << "Column not initialized";
   }
 
   const Attribute* attribute_;
@@ -245,7 +245,7 @@ class OwnedColumn {
   // Returns NULL for columns that are not nullable according to the schema;
   // non-NULL otherwise.
   bool_ptr mutable_is_null() {
-    return (is_nullable()) ? is_null_array_.mutable_data() : bool_ptr(NULL);
+    return (is_nullable()) ? is_null_array_.mutable_data() : bool_ptr(nullptr);
   }
 
   // Returns a pointer to the mutable owned is_null vector, shifted by the
@@ -253,7 +253,7 @@ class OwnedColumn {
   // Returns NULL for columns that are not nullable according to the schema;
   // non-NULL otherwise.
   bool_ptr mutable_is_null_plus_offset(rowcount_t offset) {
-    return (is_nullable()) ? mutable_is_null() + offset : bool_ptr(NULL);
+    return (is_nullable()) ? mutable_is_null() + offset : bool_ptr(nullptr);
   }
 
   // Returns the arena used by this column, if it is variable-length.
@@ -262,7 +262,7 @@ class OwnedColumn {
  private:
   // Only the block is to create an uninitialized owned column.
   friend class Block;
-  OwnedColumn() : column_(NULL), data_buffer_(), is_null_array_(), arena_() {}
+  OwnedColumn() : column_(nullptr), data_buffer_(), is_null_array_(), arena_() {}
 
   // Called by the Block's constructor.
   void Init(BufferAllocator* allocator, Column* column);
@@ -437,7 +437,7 @@ class Block {
   // in these columns, if any.
   void ResetArenas() {
     for (int i = 0; i < schema().attribute_count(); i++) {
-      if (mutable_column(i)->arena() != NULL) {
+      if (mutable_column(i)->arena() != nullptr) {
         mutable_column(i)->arena()->Reset();
       }
     }

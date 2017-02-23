@@ -39,7 +39,7 @@
 #ifndef SUPERSONIC_BASE_INFRASTRUCTURE_BIT_POINTERS_H_
 #define SUPERSONIC_BASE_INFRASTRUCTURE_BIT_POINTERS_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 #include "supersonic/utils/integral_types.h"
 #include <glog/logging.h>
@@ -132,20 +132,20 @@ class bit_ptr {
   // Constructors. None of them take ownership of data.
   explicit bit_ptr(uint32* data) : data_(data), shift_(0) {}
   bit_ptr(uint32* data, int shift) : data_(data), shift_(shift) {}
-  bit_ptr() : data_(NULL), shift_(0) {}
+  bit_ptr() : data_(nullptr), shift_(0) {}
 
   // Accessors.
   uint32* data() const { return data_; }
   int shift() const { return shift_; }
   bool is_aligned() const { return shift_ == 0; }
-  bool is_null() const { return data_ == NULL; }
+  bool is_null() const { return data_ == nullptr; }
 
   // Pointer arithmetics.
   // Incrementation (by a single bit). We increase the shift, and if it wrapped
   // around 32, we reset it to zero and increment data. The bit magic is to
   // avoid branching.
   inline bit_ptr& operator++() {
-    DCHECK(data_ != NULL);
+    DCHECK(data_ != nullptr);
     shift_++;
     data_ += shift_ >> 5;
     shift_ &= 31;
@@ -155,7 +155,7 @@ class bit_ptr {
   // Decrementation. Similarly as before, but we have to add 32 first, so that
   // we don't wrap around 0 if shift was 0 to begin with.
   inline bit_ptr& operator--() {
-    DCHECK(data_ != NULL);
+    DCHECK(data_ != nullptr);
     shift_ |= 32;
     shift_--;
     data_ -= (shift_ >> 5) ^ 1;
@@ -164,7 +164,7 @@ class bit_ptr {
   }
 
   inline bit_ptr& operator+=(int offset) {
-    DCHECK(data_ != NULL);
+    DCHECK(data_ != nullptr);
     shift_ += offset;
     data_ += (shift_ >> 5);
     shift_ &= 31;
@@ -262,17 +262,17 @@ class bit_const_ptr {
       : data_(source.data()), shift_(source.shift()) {}
   explicit bit_const_ptr(const uint32* data) : data_(data), shift_(0) {}
   bit_const_ptr(const uint32* data, int shift) : data_(data), shift_(shift) {}
-  bit_const_ptr() : data_(NULL), shift_(0) {}
+  bit_const_ptr() : data_(nullptr), shift_(0) {}
 
   // Accessors.
   inline const uint32* data() const { return data_; }
   inline int shift() const { return shift_; }
   inline bool is_aligned() const { return shift_ == 0; }
-  inline bool is_null() const { return data_ == NULL; }
+  inline bool is_null() const { return data_ == nullptr; }
 
   // Pointer arithmetics.
   inline bit_const_ptr& operator++() {
-    DCHECK(data_ != NULL);
+    DCHECK(data_ != nullptr);
     shift_++;
     data_ += shift_ >> 5;
     shift_ &= 31;
@@ -280,7 +280,7 @@ class bit_const_ptr {
   }
 
   inline bit_const_ptr& operator--() {
-    DCHECK(data_ != NULL);
+    DCHECK(data_ != nullptr);
     shift_ |= 32;
     shift_--;
     --data_ += (shift_ >> 5);
@@ -289,7 +289,7 @@ class bit_const_ptr {
   }
 
   inline bit_const_ptr& operator+=(int offset) {
-    DCHECK(data_ != NULL);
+    DCHECK(data_ != nullptr);
     shift_ += offset;
     data_ += (shift_ >> 5);
     shift_ &= 31;
@@ -337,7 +337,7 @@ class bit_const_ptr {
 // (that is arrays of boolean values stored bit-by-bit).
 class bit_array {
  public:
-  bit_array() {}
+  bit_array() = default;
 
   // Reallocates to a given size. Allocates a number of _bits_ no smaller than
   // row_capacity, and guarantees that the number of _bits_ allocated is
@@ -349,12 +349,12 @@ class bit_array {
   FailureOrVoid TryReallocate(size_t bit_capacity, BufferAllocator* allocator);
 
   bit_ptr mutable_data() const {
-    return (data_buffer_ == NULL) ? bit_ptr() :
+    return (data_buffer_ == nullptr) ? bit_ptr() :
         bit_ptr(reinterpret_cast<uint32*>(data_buffer_->data()));
   }
 
   bit_const_ptr const_data() const {
-    return (data_buffer_ == NULL) ? bit_const_ptr() :
+    return (data_buffer_ == nullptr) ? bit_const_ptr() :
         bit_const_ptr(reinterpret_cast<uint32*>(data_buffer_->data()));
   }
 
@@ -367,19 +367,19 @@ class bit_array {
 // Same as above, only the data is represented by booleans, and not by bits.
 class boolean_array {
  public:
-  boolean_array() {}
+  boolean_array() = default;
 
   // Again, same as above.
   bool Reallocate(size_t bytes_capacity, BufferAllocator* allocator);
   FailureOrVoid TryReallocate(size_t bit_capacity, BufferAllocator* allocator);
 
   bool* mutable_data() const {
-    return (data_buffer_ == NULL) ? NULL :
+    return (data_buffer_ == nullptr) ? nullptr :
         reinterpret_cast<bool*>(data_buffer_->data());
   }
 
   const bool* const_data() const {
-    return (data_buffer_ == NULL) ? NULL :
+    return (data_buffer_ == nullptr) ? nullptr :
         reinterpret_cast<const bool*>(data_buffer_->data());
   }
 
@@ -526,11 +526,11 @@ typedef bit_pointer::static_bit_array<10> small_bool_array;
 typedef bit_pointer::static_bit_array<1024> large_bool_array;
 #endif
 #if USE_BITS_FOR_IS_NULL_REPRESENTATION == false
-typedef bool* bool_ptr;
-typedef const bool* bool_const_ptr;
-typedef bit_pointer::boolean_array bool_array;
-typedef bit_pointer::static_boolean_array<10> small_bool_array;
-typedef bit_pointer::static_boolean_array<1024> large_bool_array;
+using bool_ptr = bool *;
+using bool_const_ptr = const bool *;
+using bool_array = bit_pointer::boolean_array;
+using small_bool_array = bit_pointer::static_boolean_array<10>;
+using large_bool_array = bit_pointer::static_boolean_array<1024>;
 #endif
 #undef USE_BITS_FOR_IS_NULL_REPRESENTATION
 
@@ -545,7 +545,7 @@ class BoolView {
       : columns_(new bool_ptr[column_count]),
         column_count_(column_count),
         row_count_(0) {
-    for (int i = 0; i < column_count; ++i) columns_[i] = bool_ptr(NULL);
+    for (int i = 0; i < column_count; ++i) columns_[i] = bool_ptr(nullptr);
   }
 
   // A one-column view encapsulating the bit_pointer - a convenience

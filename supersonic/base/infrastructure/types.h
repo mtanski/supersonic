@@ -19,7 +19,7 @@
 #ifndef SUPERSONIC_BASE_INFRASTRUCTURE_TYPES_H_
 #define SUPERSONIC_BASE_INFRASTRUCTURE_TYPES_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <string>
 namespace supersonic {using std::string; }
@@ -51,8 +51,8 @@ struct BasicFloatingPointTypeTraits : public BasicNumericTypeTraits {
 };
 
 struct BasicVariableLengthTypeTraits {
-  typedef StringPiece cpp_type;
-  typedef string hold_type;
+  using cpp_type = StringPiece;
+  using hold_type = string;
   static const bool is_variable_length = true;
   static const bool is_numeric = false;
   static const bool is_integer = false;
@@ -72,8 +72,8 @@ template<DataType datatype> struct BasicTypeTraits {};
 // Specializations.
 
 template<> struct BasicTypeTraits<INT32> : public BasicIntegerTypeTraits {
-  typedef int32 cpp_type;
-  typedef int32 hold_type;
+  using cpp_type = int32;
+  using hold_type = int32;
   static hold_type CppTypeToHoldType(cpp_type data) {
     return data;
   }
@@ -83,8 +83,8 @@ template<> struct BasicTypeTraits<INT32> : public BasicIntegerTypeTraits {
 };
 
 template<> struct BasicTypeTraits<INT64> : public BasicIntegerTypeTraits {
-  typedef int64 cpp_type;
-  typedef int64 hold_type;
+  using cpp_type = int64;
+  using hold_type = int64;
   static hold_type CppTypeToHoldType(cpp_type data) {
     return data;
   }
@@ -94,8 +94,8 @@ template<> struct BasicTypeTraits<INT64> : public BasicIntegerTypeTraits {
 };
 
 template<> struct BasicTypeTraits<UINT32> : public BasicIntegerTypeTraits {
-  typedef uint32 cpp_type;
-  typedef uint32 hold_type;
+  using cpp_type = uint32;
+  using hold_type = uint32;
   static const bool is_unsigned = true;
   static hold_type CppTypeToHoldType(cpp_type data) {
     return data;
@@ -106,8 +106,8 @@ template<> struct BasicTypeTraits<UINT32> : public BasicIntegerTypeTraits {
 };
 
 template<> struct BasicTypeTraits<UINT64> : public BasicIntegerTypeTraits {
-  typedef uint64 cpp_type;
-  typedef uint64 hold_type;
+  using cpp_type = uint64;
+  using hold_type = uint64;
   static const bool is_unsigned = true;
   static hold_type CppTypeToHoldType(cpp_type data) {
     return data;
@@ -118,8 +118,8 @@ template<> struct BasicTypeTraits<UINT64> : public BasicIntegerTypeTraits {
 };
 
 template<> struct BasicTypeTraits<FLOAT> : public BasicFloatingPointTypeTraits {
-  typedef float cpp_type;
-  typedef float hold_type;
+  using cpp_type = float;
+  using hold_type = float;
   static hold_type CppTypeToHoldType(cpp_type data) {
     return data;
   }
@@ -130,8 +130,8 @@ template<> struct BasicTypeTraits<FLOAT> : public BasicFloatingPointTypeTraits {
 
 template<> struct BasicTypeTraits<DOUBLE>
     : public BasicFloatingPointTypeTraits {
-  typedef double cpp_type;
-  typedef double hold_type;
+  using cpp_type = double;
+  using hold_type = double;
   static hold_type CppTypeToHoldType(cpp_type data) {
     return data;
   }
@@ -141,8 +141,8 @@ template<> struct BasicTypeTraits<DOUBLE>
 };
 
 template<> struct BasicTypeTraits<BOOL> {
-  typedef bool cpp_type;
-  typedef bool hold_type;
+  using cpp_type = bool;
+  using hold_type = bool;
   static const bool is_variable_length = false;
   static const bool is_numeric = false;
   static const bool is_integer = false;
@@ -156,8 +156,8 @@ template<> struct BasicTypeTraits<BOOL> {
 };
 
 template<> struct BasicTypeTraits<ENUM> {
-  typedef int32 cpp_type;
-  typedef int32 hold_type;
+  using cpp_type = int32;
+  using hold_type = int32;
   static const bool is_variable_length = false;
   static const bool is_numeric = false;
   static const bool is_integer = false;
@@ -177,8 +177,8 @@ template<> struct BasicTypeTraits<BINARY>
     : public BasicVariableLengthTypeTraits {};  // NOLINT
 
 template<> struct BasicTypeTraits<DATETIME> {
-  typedef int64 cpp_type;
-  typedef int64 hold_type;
+  using cpp_type = int64;
+  using hold_type = int64;
   static const bool is_variable_length = false;
   static const bool is_numeric = false;
   static const bool is_integer = false;
@@ -192,8 +192,8 @@ template<> struct BasicTypeTraits<DATETIME> {
 };
 
 template<> struct BasicTypeTraits<DATE> {
-  typedef int32 cpp_type;
-  typedef int32 hold_type;
+  using cpp_type = int32;
+  using hold_type = int32;
   static const bool is_variable_length = false;
   static const bool is_numeric = false;
   static const bool is_integer = false;
@@ -207,8 +207,8 @@ template<> struct BasicTypeTraits<DATE> {
 };
 
 template<> struct BasicTypeTraits<DATA_TYPE> {
-  typedef DataType cpp_type;
-  typedef DataType hold_type;
+  using cpp_type = DataType;
+  using hold_type = DataType;
   static const bool is_variable_length = false;
   static const bool is_numeric = false;
   static const bool is_integer = false;
@@ -228,8 +228,8 @@ template<DataType datatype> struct TypeTraits
   // hold_type is the same as cpp_type for non-variable length types. If the
   // type is variable length, the cpp_type does not own the contents, while
   // hold_type does.
-  typedef typename BasicTypeTraits<datatype>::cpp_type cpp_type;
-  typedef typename BasicTypeTraits<datatype>::hold_type hold_type;
+  using cpp_type = typename BasicTypeTraits<datatype>::cpp_type;
+  using hold_type = typename BasicTypeTraits<datatype>::hold_type;
   static const DataType type = datatype;
   static const size_t size = sizeof(cpp_type);
   static const google::protobuf::EnumValueDescriptor* descriptor() {
@@ -249,11 +249,11 @@ template<DataType datatype> struct TypeTraits
 };
 
 // Represents 'RowID'. Should be used everywhere when we refer to row IDs.
-typedef int64 rowid_t;
+using rowid_t = int64;
 
 // Represents 'row count'. Unsigned. Should be used everywhere we refer to
 // row counts or positive row offsets.
-typedef uint64 rowcount_t;
+using rowcount_t = uint64;
 
 // Lets to obtain the DataType enumeration that corresponds to the specified
 // C++ type.

@@ -133,7 +133,7 @@ class Exception {
   void operator=(const Exception&);  // DISALLOW_ASSIGN
   // Internally used.
   Exception(const Exception& other)
-      : serial_(other.serial_) {}
+      = default;
 };
 
 }  // namespace supersonic

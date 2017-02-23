@@ -64,8 +64,8 @@ class BoundRegexpExpression : public BoundUnaryExpression {
         pattern_(pattern) {}
 
  private:
-  virtual EvaluationResult DoEvaluate(const View& input,
-                                      const BoolView& skip_vectors) {
+  EvaluationResult DoEvaluate(const View& input,
+                                      const BoolView& skip_vectors) override {
     CHECK_EQ(1, skip_vectors.column_count());
     my_block()->ResetArenas();
     bool_ptr skip_vector = skip_vectors.column(0);
@@ -115,8 +115,8 @@ class BoundRegexpExtractExpression : public BoundUnaryExpression {
         pattern_(pattern) {}
 
  private:
-  virtual EvaluationResult DoEvaluate(const View& input,
-                                      const BoolView& skip_vectors) {
+  EvaluationResult DoEvaluate(const View& input,
+                                      const BoolView& skip_vectors) override {
     my_block()->ResetArenas();
     CHECK_EQ(1, skip_vectors.column_count());
     bool_ptr skip_vector = skip_vectors.column(0);
@@ -164,8 +164,8 @@ class BoundRegexpReplaceExpression : public BoundBinaryExpression {
         pattern_(pattern) {}
 
  private:
-  virtual EvaluationResult DoEvaluate(const View& input,
-                                      const BoolView& skip_vectors) {
+  EvaluationResult DoEvaluate(const View& input,
+                                      const BoolView& skip_vectors) override {
     my_block()->ResetArenas();
     CHECK_EQ(1, skip_vectors.column_count());
     bool_ptr skip_vector = skip_vectors.column(0);

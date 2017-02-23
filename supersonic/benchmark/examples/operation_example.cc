@@ -53,7 +53,7 @@ Operation* CreateGroup() {
   std::unique_ptr<Operation> group(GroupAggregate(
       ProjectAttributeAt(0),
       (new AggregationSpecification)->AddAggregation(MAX, "col1", "col1_maxes"),
-      NULL, new Table(builder.Build())));
+      nullptr, new Table(builder.Build())));
   return group.release();
 }
 
@@ -85,7 +85,7 @@ Operation* CreateSort(size_t input_row_count) {
 
   return Sort(
       CreateExampleSortOrder(),
-      NULL,
+      nullptr,
       std::numeric_limits<size_t>::max(),
       new Table(builder.Build()));
 }
@@ -147,7 +147,7 @@ Operation* SimpleTreeExample() {
   std::unique_ptr<Operation> group(GroupAggregate(
       ProjectNamedAttribute("boss_name"),
       (new AggregationSpecification)->AddAggregation(MAX, "ratio", "max_ratio"),
-      NULL, compute.release()));
+      nullptr, compute.release()));
 
   // Let every fourth pass.
   std::unique_ptr<Operation> filter2(
@@ -168,7 +168,7 @@ Operation* SimpleTreeExample() {
                                group.release());
 }
 
-typedef vector<Operation*>::iterator operation_iterator;
+using operation_iterator = vector<Operation *>::iterator;
 
 void Run() {
   vector<Operation*> operations(Container(

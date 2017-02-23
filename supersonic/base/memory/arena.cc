@@ -38,7 +38,7 @@ Arena::Arena(size_t initial_buffer_size, size_t max_buffer_size)
 
 void* Arena::AllocateBytes(const size_t size) {
   void* result = current_->AllocateBytes(size);
-  if (result != NULL) return result;
+  if (result != nullptr) return result;
 
   // Need to allocate more space.
   size_t next_component_size = min(2 * current_->size(), max_buffer_size_);
@@ -58,13 +58,13 @@ void* Arena::AllocateBytes(const size_t size) {
   CHECK_LE(minimal, next_component_size);
   // Now, just make sure we can actually get the memory.
   Component* component = AddComponent(next_component_size, minimal);
-  if (component == NULL) {
+  if (component == nullptr) {
     component = AddComponent(next_component_size, size);
   }
-  if (!component) return NULL;
+  if (!component) return nullptr;
   // Now, must succeed. The component has at least 'size' bytes.
   result = component->AllocateBytes(size);
-  CHECK(result != NULL);
+  CHECK(result != nullptr);
   return result;
 }
 
@@ -72,9 +72,9 @@ Arena::Component* Arena::AddComponent(size_t requested_size,
                                       size_t minimum_size) {
   Buffer* buffer = buffer_allocator_->BestEffortAllocate(requested_size,
                                                          minimum_size);
-  if (buffer == NULL) return NULL;
+  if (buffer == nullptr) return nullptr;
   current_ = new Component(buffer);
-  arena_.push_back(linked_ptr<Component>(current_));
+  arena_.emplace_back(current_);
   arena_footprint_ += current_->size();
   return current_;
 }

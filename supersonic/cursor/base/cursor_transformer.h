@@ -28,7 +28,7 @@ class Cursor;
 
 class CursorTransformer {
  public:
-  virtual ~CursorTransformer() { }
+  virtual ~CursorTransformer() = default;
 
   // Runs the transformer on the specified cursor. The caller takes ownership
   // of the returned cursor and relinquishes ownership of the argument.
@@ -38,7 +38,7 @@ class CursorTransformer {
 
  protected:
   // To allow instantiation in subclasses.
-  CursorTransformer() {}
+  CursorTransformer() = default;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(CursorTransformer);

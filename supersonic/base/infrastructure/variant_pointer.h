@@ -18,7 +18,7 @@
 #ifndef SUPERSONIC_BASE_INFRASTRUCTURE_VARIANT_POINTER_H_
 #define SUPERSONIC_BASE_INFRASTRUCTURE_VARIANT_POINTER_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 #include "supersonic/utils/integral_types.h"
 #include "supersonic/base/infrastructure/types.h"
@@ -37,7 +37,7 @@ namespace supersonic {
 class VariantPointer {
  public:
   // Creates an uninitialized pointer. (Don't rely on it being initialized).
-  VariantPointer() : pointer_(NULL) {}
+  VariantPointer() : pointer_(nullptr) {}
 
   // Initialize the pointer given the start address of its memory block.
   VariantPointer(void* pointer) : pointer_(pointer) {}
@@ -60,7 +60,7 @@ class VariantPointer {
   }
 
   // Returns true if this pointer is NULL.
-  bool is_null() const { return pointer_ == NULL; }
+  bool is_null() const { return pointer_ == nullptr; }
 
   // Returns a pointer equal to this pointer + offset, where the offset
   // specifies the count of typed items, as indicated by type_info.
@@ -87,7 +87,7 @@ class VariantPointer {
 class VariantConstPointer {
  public:
   // Creates an uninitialized pointer. (Don't rely on it being initialized).
-  VariantConstPointer() : pointer_(NULL) {}
+  VariantConstPointer() : pointer_(nullptr) {}
 
   // Initialize the pointer given the start address of its memory block.
   VariantConstPointer(const void* pointer) : pointer_(pointer) {}
@@ -116,7 +116,7 @@ class VariantConstPointer {
   const void* raw() const { return pointer_; }
 
   // Returns true if this pointer is NULL.
-  bool is_null() const { return pointer_ == NULL; }
+  bool is_null() const { return pointer_ == nullptr; }
 
   // Returns a pointer equal to this pointer + offset, where the offset
   // specifies the count of typed items, as indicated by type_info.

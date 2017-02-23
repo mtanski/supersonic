@@ -15,9 +15,9 @@
 
 #include "supersonic/cursor/core/column_aggregator.h"
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 
 #include <unordered_set>
 #include <map>
@@ -50,8 +50,8 @@ using std::vector;
 namespace supersonic {
 namespace aggregations {
 
-ColumnAggregator::ColumnAggregator() {}
-ColumnAggregator::~ColumnAggregator() {}
+ColumnAggregator::ColumnAggregator() = default;
+ColumnAggregator::~ColumnAggregator() = default;
 
 // Internal interface for updating and reseting result of an aggregation.
 // Extends ColumnAggregator interface with a method needed by
@@ -59,7 +59,7 @@ ColumnAggregator::~ColumnAggregator() {}
 class ColumnAggregatorInternal : public ColumnAggregator {
  public:
   ColumnAggregatorInternal() {}
-  virtual ~ColumnAggregatorInternal() {}
+  ~ColumnAggregatorInternal() override = default;
 
   // Like UpdateAggregation, but takes into account only input values which
   // indexes are in selected_inputs_indexes.
@@ -75,10 +75,10 @@ class ColumnAggregatorInternal : public ColumnAggregator {
 
 // Generic column aggregator supporting all operators except COUNT.
 template<Aggregation Aggregation, DataType InputType, DataType OutputType>
-class ColumnAggregatorImpl : public ColumnAggregatorInternal {
+class ColumnAggregatorImpl final : public ColumnAggregatorInternal {
  public:
-  typedef typename TypeTraits<InputType>::cpp_type cpp_input_type;
-  typedef typename TypeTraits<OutputType>::cpp_type cpp_output_type;
+  using cpp_input_type = typename TypeTraits<InputType>::cpp_type;
+  using cpp_output_type = typename TypeTraits<OutputType>::cpp_type;
 
   ColumnAggregatorImpl(Block* result_block, int result_column_index)
       : allocated_buffers_(),
@@ -86,14 +86,14 @@ class ColumnAggregatorImpl : public ColumnAggregatorInternal {
         aggregation_operator_(result_block->allocator()),
         result_block_(result_block),
         result_column_index_(result_column_index),
-        result_data_(NULL),
-        result_is_null_(NULL) {
+        result_data_(nullptr),
+        result_is_null_(nullptr) {
     Rebind(0, result_block->row_capacity());
   }
 
-  virtual ~ColumnAggregatorImpl() {}
+  ~ColumnAggregatorImpl() = default;
 
-  virtual void Rebind(rowcount_t previous_capacity, rowcount_t new_capacity) {
+  void Rebind(rowcount_t previous_capacity, rowcount_t new_capacity){
     result_data_ = result_block_->mutable_column(result_column_index_)->
         template mutable_typed_data<OutputType>();
     result_is_null_ = result_block_->mutable_column(result_column_index_)->
@@ -105,10 +105,10 @@ class ColumnAggregatorImpl : public ColumnAggregatorInternal {
     }
   }
 
-  virtual FailureOrVoid UpdateAggregation(const Column* input,
-                                          rowcount_t input_row_count,
-                                          const rowid_t result_index_map[]) {
-    bool input_always_not_null = (input->is_null() == NULL);
+  FailureOrVoid UpdateAggregation(const Column* input,
+                                  rowcount_t input_row_count,
+                                  const rowid_t result_index_map[]) {
+    bool input_always_not_null = (input->is_null() == nullptr);
     for (rowid_t i = 0; i < input_row_count; ++i) {
       if (input_always_not_null || !input->is_null()[i]) {
         if (!UpdateAggregatedValue(
@@ -124,23 +124,22 @@ class ColumnAggregatorImpl : public ColumnAggregatorInternal {
     return Success();
   }
 
-  virtual void Reset() {
+  void Reset() {
     if (TypeTraits<OutputType>::is_variable_length) {
       FreeAllocatedBuffers();
     }
     Clear(0, result_block_->row_capacity());
   }
 
-  virtual FailureOrVoid UpdateAggregationForSelectedInputs(
+  FailureOrVoid UpdateAggregationForSelectedInputs(
       const Column* input,
       rowcount_t input_row_count,
       const rowid_t result_index_map[],
       const vector<rowid_t>& selected_inputs_indexes) {
-    for (vector<rowid_t>::const_iterator it = selected_inputs_indexes.begin();
-         it != selected_inputs_indexes.end(); ++it) {
+    for (auto selected_inputs_indexe:  selected_inputs_indexes) {
       if (!UpdateAggregatedValue(
-              input->data().as<InputType>()[*it],
-              result_index_map[*it])) {
+              input->data().as<InputType>()[selected_inputs_indexe],
+              result_index_map[selected_inputs_indexe])) {
         THROW(new Exception(
             ERROR_MEMORY_EXCEEDED,
             "Aggregator memory exceeded. Not enough memory to aggregate "
@@ -175,9 +174,8 @@ class ColumnAggregatorImpl : public ColumnAggregatorInternal {
 
   void FreeAllocatedBuffers() {
     // Free all buffers but do not change the size of allocated buffers vector.
-    for (vector<std::unique_ptr<Buffer>>::iterator it =
-        allocated_buffers_.begin(); it != allocated_buffers_.end(); ++it) {
-      it->reset();
+      for (auto &buffer: allocated_buffers_) {
+      buffer.reset();
     }
   }
 
@@ -195,25 +193,25 @@ class ColumnAggregatorImpl : public ColumnAggregatorInternal {
 
 // Column aggregator for COUNT.
 template<DataType OutputType>
-class CountColumnAggregatorImpl : public ColumnAggregatorInternal {
+class CountColumnAggregatorImpl final : public ColumnAggregatorInternal {
  public:
   COMPILE_ASSERT(TypeTraits<OutputType>::is_integer, output_type_not_integer);
-  typedef typename TypeTraits<OutputType>::cpp_type cpp_output_type;
+  using cpp_output_type = typename TypeTraits<OutputType>::cpp_type;
 
   CountColumnAggregatorImpl(Block* result_block,
                             int result_column_index) :
       result_column_(result_block->mutable_column(result_column_index)),
-      result_data_(NULL),
+      result_data_(nullptr),
       row_capacity_(result_block->row_capacity()) {
     Rebind(0, row_capacity_);
   }
 
-  virtual ~CountColumnAggregatorImpl() {}
+  virtual ~CountColumnAggregatorImpl() override = default;
 
   virtual FailureOrVoid UpdateAggregation(const Column* input,
                                           rowcount_t input_row_count,
                                           const rowid_t result_index_map[]) {
-    bool check_input_nullability = (input != NULL && input->is_null() != NULL);
+    bool check_input_nullability = (input != nullptr && input->is_null() != nullptr);
     for (rowid_t i = 0; i < input_row_count; ++i) {
       // Do not count NULL values.
       if (check_input_nullability && input->is_null()[i]) {
@@ -242,9 +240,8 @@ class CountColumnAggregatorImpl : public ColumnAggregatorInternal {
       rowcount_t input_row_count,
       const rowid_t result_index_map[],
       const vector<rowid_t>& selected_inputs_indexes) {
-    for (vector<rowid_t>::const_iterator it = selected_inputs_indexes.begin();
-         it != selected_inputs_indexes.end(); ++it) {
-      size_t result_index = result_index_map[*it];
+    for (auto selected_inputs_indexe : selected_inputs_indexes) {
+      size_t result_index = result_index_map[selected_inputs_indexe];
       result_data_[result_index] += 1;
     }
     return Success();
@@ -305,21 +302,21 @@ struct HashSet<StringPiece> {
 };
 
 template<DataType InputType>
-class DistinctAggregator : public ColumnAggregator {
+class DistinctAggregator final : public ColumnAggregator {
  public:
-  typedef typename TypeTraits<InputType>::cpp_type cpp_input_type;
+  using cpp_input_type = typename TypeTraits<InputType>::cpp_type;
 
   DistinctAggregator(ColumnAggregatorInternal* aggregator, Block* result_block)
       : aggregator_(aggregator) {}
 
-  virtual ~DistinctAggregator() {}
+  ~DistinctAggregator() override = default;
 
   virtual FailureOrVoid UpdateAggregation(const Column* input,
                                           rowcount_t input_row_count,
                                           const rowid_t result_index_map[]) {
     vector<rowid_t> selected_inputs_indexes;
     CHECK_NOTNULL(input);
-    bool check_input_nullability = input->is_null() != NULL;
+    bool check_input_nullability = input->is_null() != nullptr;
     for (rowid_t i = 0; i < input_row_count; ++i) {
       // NULL values do not count as distinct.
       if (check_input_nullability && input->is_null()[i]) {
@@ -399,15 +396,15 @@ class ColumnAggregatorFactoryImpl {
 
 
  private:
-  typedef ColumnAggregator* (*AggregatorCreatorFunction)(
+  using AggregatorCreatorFunction = ColumnAggregator *(*)(
       Block* result_block,
       int result_column_index);
 
-  typedef ColumnAggregator* (*CountAggregatorCreatorFunction)(
+  using CountAggregatorCreatorFunction = ColumnAggregator *(*)(
       Block* result_block,
       int result_column_index);
 
-  typedef ColumnAggregator* (*DistinctAggregatorCreatorFunction)(
+  using DistinctAggregatorCreatorFunction = ColumnAggregator *(*)(
       ColumnAggregatorInternal* aggregator,
       Block* result_block);
 
@@ -535,7 +532,7 @@ ColumnAggregatorFactoryImpl::ColumnAggregatorFactoryImpl() {
 #undef NUMERIC_TYPE_FACTORY_INIT_SECOND_TYPE
 #undef NON_NUMERIC_TYPE_FACTORY_INIT
 
-ColumnAggregatorFactoryImpl::~ColumnAggregatorFactoryImpl() {}
+ColumnAggregatorFactoryImpl::~ColumnAggregatorFactoryImpl() = default;
 
 FailureOrOwned<ColumnAggregator> ColumnAggregatorFactoryImpl::CreateAggregator(
     Aggregation aggregation_operator,
@@ -645,7 +642,7 @@ bool ColumnAggregatorFactoryImpl::IsAggregationSupported(
 ColumnAggregatorFactory::ColumnAggregatorFactory()
     : pimpl_(new ColumnAggregatorFactoryImpl) {}
 
-ColumnAggregatorFactory::~ColumnAggregatorFactory() {}
+ColumnAggregatorFactory::~ColumnAggregatorFactory() = default;
 
 FailureOrOwned<ColumnAggregator> ColumnAggregatorFactory::CreateAggregator(
     Aggregation aggregation_operator,

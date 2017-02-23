@@ -22,8 +22,8 @@
 #ifndef SUPERSONIC_BASE_INFRASTRUCTURE_TYPES_INFRASTRUCTURE_H_
 #define SUPERSONIC_BASE_INFRASTRUCTURE_TYPES_INFRASTRUCTURE_H_
 
-#include <stddef.h>
-#include <string.h>
+#include <cstddef>
+#include <cstring>
 
 #include <algorithm>
 #include "supersonic/utils/std_namespace.h"
@@ -289,17 +289,17 @@ template<DataType left_type, DataType right_type,
 inline ComparisonResult ThreeWayCompareWithNulls(
     const CPP_TYPE(left_type)* const left,
     const CPP_TYPE(right_type)* const right) {
-  DCHECK(!(right == NULL && right_not_null));
-  DCHECK(!(left == NULL && left_not_null));
-  if (!right_not_null && right == NULL) {
+  DCHECK(!(right == nullptr && right_not_null));
+  DCHECK(!(left == nullptr && left_not_null));
+  if (!right_not_null && right == nullptr) {
     if (weak) return RESULT_GREATER_OR_EQUAL;
-    if (!left_not_null && left == NULL) {
+    if (!left_not_null && left == nullptr) {
       return ignore_equal_null ? RESULT_EQUAL : RESULT_EQUAL_NULL;
     } else {
       return RESULT_GREATER;
     }
   }
-  if (!left_not_null && left == NULL) return RESULT_LESS;
+  if (!left_not_null && left == nullptr) return RESULT_LESS;
   return ThreeWayCompare<left_type, right_type, weak>(*left, *right);
 }
 
@@ -312,10 +312,10 @@ struct EqualityWithNullsComparator {
   bool operator()(const CPP_TYPE(left_type)* const left,
                   const CPP_TYPE(right_type)* const right) const {
     operators::Equal equal;
-    if (!left_not_null && left == NULL) {
-      return (!right_not_null && right == NULL);
+    if (!left_not_null && left == nullptr) {
+      return (!right_not_null && right == nullptr);
     } else {
-      return (right_not_null || right != NULL) && equal(*left, *right);
+      return (right_not_null || right != nullptr) && equal(*left, *right);
     }
   }
 };
@@ -348,7 +348,7 @@ struct InequalityWithNullsComparator {
 template<DataType type>
 struct ShallowDatumCopy {
   void operator()(const CPP_TYPE(type)& input, CPP_TYPE(type)* output) {
-    DCHECK(output != NULL) << "The output must not be NULL";
+    DCHECK(output != nullptr) << "The output must not be NULL";
     *output = input;
   }
 };
@@ -379,7 +379,7 @@ struct DatumCopy<type, true, true> {
                   Arena* const arena) {
     // For variable-length types cpp_type is StringPiece.
     const char* copy = arena->AddStringPieceContent(input);
-    if (copy == NULL) {
+    if (copy == nullptr) {
       LOG(WARNING) << "Deep copy failed, size of input is " << input.size();
       return false;
     } else {
@@ -397,7 +397,7 @@ struct DatumCopy<type, true, true> {
 template<DataType type, typename Hasher, bool is_not_null>
 struct HashComputer {
   size_t operator()(const CPP_TYPE(type)* const datum) const {
-    if (!is_not_null && datum == NULL) {
+    if (!is_not_null && datum == nullptr) {
       return 0xdeadbabe;
     } else {
       Hasher hasher;
@@ -421,14 +421,14 @@ struct ColumnHashComputer {
       size_t item_hash;
       // We're relying on the compiler to take advantage of the constness of
       // is_null, and pre-compute (is_null != NULL).
-      if (!is_not_null && is_null != NULL && *is_null) {
+      if (!is_not_null && is_null != nullptr && *is_null) {
         item_hash = 0xdeadbabe;
       } else {
         item_hash = hasher(data[i]);
       }
       // We rely on the compiler to precompute the condition, so there will
       // be no branching here.
-      if (!is_not_null && is_null != NULL) ++is_null;
+      if (!is_not_null && is_null != nullptr) ++is_null;
       hashes[i] = update ? hashes[i] * 29 + item_hash : item_hash;
     }
   }
@@ -442,29 +442,24 @@ struct ColumnHashComputer {
 // different types), and some on columns.
 
 // Prototype of a function that appends a formatted typed value to a string.
-typedef void (*AttributePrinter)(VariantConstPointer value, string* target);
+using AttributePrinter = void (*)(supersonic::VariantConstPointer, string *);
 
 // Prototype of a function that parses a typed POD value from a string.
-typedef bool (*AttributeParser)(const char* value, VariantPointer target);
+using AttributeParser = bool (*)(const char *, supersonic::VariantPointer);
 
 // Prototype of a function that compares two typed values for in/equality,
 // and gives a boolean result.
-typedef bool (*EqualityComparator)(VariantConstPointer left,
-                                   VariantConstPointer right);
+using EqualityComparator = bool (*)(supersonic::VariantConstPointer, supersonic::VariantConstPointer);
 
 // Prototype of a function that compares two typed values for inequality.
-typedef ComparisonResult (*InequalityComparator)(VariantConstPointer left,
-                                                 VariantConstPointer right);
+using InequalityComparator = supersonic::ComparisonResult (*)(supersonic::VariantConstPointer, supersonic::VariantConstPointer);
 
 // Prototype of a function that computes a hash code for a single item.
-typedef size_t (*Hasher)(VariantConstPointer datum);
+using Hasher = size_t (*)(supersonic::VariantConstPointer);
 
 // Prototype of a function that computes or updates hash codes for a column
 // of data.
-typedef void (*ColumnHasher)(VariantConstPointer data,
-                             bool_const_ptr is_null,
-                             size_t row_count,
-                             size_t* hashes);
+using ColumnHasher = void (*)(supersonic::VariantConstPointer, bool_const_ptr, size_t, size_t *);
 
 // Returns a function that knows how to write the attribute to string.
 // NULLs are written as "NULL". Appends the result at the end of the supplied

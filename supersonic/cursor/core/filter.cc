@@ -15,7 +15,7 @@
 
 #include "supersonic/cursor/core/filter.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <algorithm>
 #include "supersonic/utils/std_namespace.h"
@@ -62,7 +62,7 @@ static const int kMinimumFillPercent = 25;
 // input the predicate has been calculated, and refrain from restricting the
 // input block size by the predicate capacity (to allow the child to process
 // more rows at one go).
-class FilterCursor : public BasicCursor {
+class FilterCursor final : public BasicCursor {
  public:
   // Creates new FilterCursor.
   // Takes ownership of the predicate and child_cursor, doens't take
@@ -177,7 +177,7 @@ class FilterCursor : public BasicCursor {
     const rowcount_t row_count = current_view_->row_count();
     rowid_t* ids_pointer =
         input_row_ids_.mutable_column(0)->mutable_typed_data<kRowidDatatype>();
-    if (result_column.is_null() != NULL) {
+    if (result_column.is_null() != nullptr) {
       bool_const_ptr predicate_column_is_null = result_column.is_null();
       for (rowid_t i = 0;
            i < row_count;
