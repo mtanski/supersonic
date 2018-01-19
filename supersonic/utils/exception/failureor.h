@@ -539,7 +539,8 @@ ReferencePropagator<Result> Success(Result& result) {  // NOLINT
 template <
     typename Result,
     typename = std::enable_if_t<std::is_move_constructible<Result>::value>,
-    typename = std::enable_if_t<!std::is_pointer<Result>::value>>
+    typename = std::enable_if_t<!std::is_pointer<Result>::value>,
+    typename = std::enable_if_t<!std::is_null_pointer<Result>::value>>
 RValuePropagator<Result> Success(Result&& result) {
   return RValuePropagator<Result>(std::move(result));
 }
