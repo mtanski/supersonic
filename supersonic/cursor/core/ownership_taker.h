@@ -30,12 +30,12 @@
 
 namespace supersonic {
 
-template<typename Owned>
+template<typename... Owned>
 class OwnershipTaker : public Cursor {
  public:
   virtual ~OwnershipTaker() {}
 
-  static unique_ptr<OwnershipTaker> Create(unique_ptr<Cursor> child, unique_ptr<Owned> owned) {
+  static unique_ptr<OwnershipTaker> Create(unique_ptr<Cursor>&& child, std::tuple<Owned...>&& owned) {
     return make_unique<OwnershipTaker>(std::move(child), std::move(owned));
   }
 
@@ -53,46 +53,24 @@ class OwnershipTaker : public Cursor {
 
   virtual CursorId GetCursorId() const { return OWNERSHIP_TAKER; }
 
-  OwnershipTaker(unique_ptr<Cursor> child, unique_ptr<Owned> owned)
+  OwnershipTaker(unique_ptr<Cursor>&& child, std::tuple<Owned...>&& owned)
       : owned_(std::move(owned)),
         child_(std::move(child))
   {}
 
 private:
   // Defining owned_ field first, so it will outlive child_.
-  unique_ptr<Owned> owned_;
+  std::tuple<Owned...> owned_;
   const unique_ptr<Cursor> child_;
   DISALLOW_COPY_AND_ASSIGN(OwnershipTaker);
 };
 
-namespace internal {
+// Take-ownership functions.
 
-template<typename A, typename B>
-auto new_linked_pair(unique_ptr<A> a, unique_ptr<B> b) {
-  return make_unique<pair<linked_ptr<A>, linked_ptr<B>>>(
-      make_linked_ptr(a.release()), make_linked_ptr(b.release()));
-}
-
-}  // namespace internal
-
-// Take-ownership functions, for up to 6 arguments. (Can be extended further
-// if needed). Return a cursor that, when itself destroyed, will destroy all
-// the objects specified as arguments.
-
-template<typename T>
-unique_ptr<Cursor> TakeOwnership(unique_ptr<Cursor> child, unique_ptr<T> owned) {
-  return OwnershipTaker<T>::Create(std::move(child), std::move(owned));
-}
-
-template<typename T, typename T2, typename... Args>
-unique_ptr<Cursor> TakeOwnership(
-    unique_ptr<Cursor> child,
-    unique_ptr<T> a, unique_ptr<T2> b,
-    Args&&... args) {
-  return TakeOwnership(
-      std::move(child),
-      internal::new_linked_pair(std::move(a), std::move(b)),
-      std::forward<Args>(args)...);
+template<typename... Owned>
+unique_ptr<Cursor> TakeOwnership(unique_ptr<Cursor>&& child, Owned&&... args) {
+  std::tuple<Owned...> values(std::forward<Owned>(args)...);
+  return OwnershipTaker<Owned...>::Create(std::move(child), std::move(values));
 }
 
 // Takes a dynamically-allocated operation and 'turns it' into a cursor;
