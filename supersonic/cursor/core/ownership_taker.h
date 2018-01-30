@@ -77,10 +77,13 @@ unique_ptr<Cursor> TakeOwnership(unique_ptr<Cursor>&& child, Owned&&... args) {
 // i.e., it creates a cursor from it, and make it the owner of the operation.
 // The operation gets deleted when the cursor is deleted. You should not use
 // the operation directly after having passed it to this function.
-inline FailureOrOwned<Cursor> TurnIntoCursor(unique_ptr<Operation> operation) {
+template<typename... Owned>
+inline FailureOrOwned<Cursor> TurnIntoCursor(unique_ptr<Operation> operation, Owned&&... args) {
   FailureOrOwned<Cursor> result = operation->CreateCursor();
   PROPAGATE_ON_FAILURE(result);
-  return Success(TakeOwnership(result.move(), std::move(operation)));
+
+  std::tuple<unique_ptr<Operation>, Owned...> values(std::move(operation), std::forward<Owned>(args)...);
+  return Success(OwnershipTaker<unique_ptr<Operation>, Owned...>::Create(result.move(), std::move(values)));
 }
 
 }  // namespace supersonic
