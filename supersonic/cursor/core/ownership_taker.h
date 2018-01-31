@@ -30,12 +30,12 @@
 
 namespace supersonic {
 
-template<typename... Owned>
+template<typename Owned>
 class OwnershipTaker : public Cursor {
  public:
   virtual ~OwnershipTaker() {}
 
-  static unique_ptr<OwnershipTaker> Create(unique_ptr<Cursor>&& child, std::tuple<Owned...>&& owned) {
+  static unique_ptr<OwnershipTaker> Create(unique_ptr<Cursor>&& child, Owned owned) {
     return make_unique<OwnershipTaker>(std::move(child), std::move(owned));
   }
 
@@ -53,24 +53,42 @@ class OwnershipTaker : public Cursor {
 
   virtual CursorId GetCursorId() const { return OWNERSHIP_TAKER; }
 
-  OwnershipTaker(unique_ptr<Cursor>&& child, std::tuple<Owned...>&& owned)
+  OwnershipTaker(unique_ptr<Cursor>&& child, Owned owned)
       : owned_(std::move(owned)),
         child_(std::move(child))
   {}
 
 private:
   // Defining owned_ field first, so it will outlive child_.
-  std::tuple<Owned...> owned_;
+  Owned owned_;
   const unique_ptr<Cursor> child_;
   DISALLOW_COPY_AND_ASSIGN(OwnershipTaker);
 };
 
 // Take-ownership functions.
+namespace internal {
+  static inline
+  auto linked_pair() {
+    return std::make_tuple();
+  }
+
+  template<typename A>
+  static inline
+  auto linked_pair(unique_ptr<A> a) {
+    return std::make_tuple(std::move(a));
+  }
+
+  template<typename A, typename... Other>
+  static inline
+  auto linked_pair(unique_ptr<A> a, Other&&... other) {
+    return std::make_pair(std::move(a), linked_pair(std::forward<Other>(other)...));
+  }
+}
 
 template<typename... Owned>
 unique_ptr<Cursor> TakeOwnership(unique_ptr<Cursor>&& child, Owned&&... args) {
-  std::tuple<Owned...> values(std::forward<Owned>(args)...);
-  return OwnershipTaker<Owned...>::Create(std::move(child), std::move(values));
+  auto linked_pairs = internal::linked_pair(std::forward<Owned>(args)...);
+  return OwnershipTaker<decltype(linked_pairs)>::Create(std::move(child), std::move(linked_pairs));
 }
 
 // Takes a dynamically-allocated operation and 'turns it' into a cursor;
@@ -82,8 +100,7 @@ inline FailureOrOwned<Cursor> TurnIntoCursor(unique_ptr<Operation> operation, Ow
   FailureOrOwned<Cursor> result = operation->CreateCursor();
   PROPAGATE_ON_FAILURE(result);
 
-  std::tuple<unique_ptr<Operation>, Owned...> values(std::move(operation), std::forward<Owned>(args)...);
-  return Success(OwnershipTaker<unique_ptr<Operation>, Owned...>::Create(result.move(), std::move(values)));
+  return Success(TakeOwnership(result.move(), std::forward<Owned>(args)...));
 }
 
 }  // namespace supersonic
