@@ -302,6 +302,10 @@ class FailureOr : public FailureOrVoid<Exception> {
     return result_;
   }
 
+  Result move() {
+    return std::move(result_);
+  }
+
  private:
   Result result_;
   // Copyable.
