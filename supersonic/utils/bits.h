@@ -105,6 +105,12 @@ class Bits {
   static int Log2FloorNonZero64_Portable(uint64_t n);
   static int FindLSBSetNonZero64_Portable(uint64_t n);
 
+  template<class T>
+  static int PopCount(T v);
+
+  template<class T>
+  static bool IsPow2(T v);
+
   // Viewing bytes as a stream of unsigned bytes, does that stream
   // contain any byte equal to c?
   template <class T> static bool BytesContainByte(T bytes, uint8_t c);
@@ -219,6 +225,26 @@ inline int Bits::Log2Floor64(uint64_t n) {
 
 inline int Bits::Log2FloorNonZero64(uint64_t n) {
   return 63 ^ __builtin_clzll(n);
+}
+
+template<>
+inline int Bits::PopCount(unsigned int v) {
+  return __builtin_popcount(v);
+}
+
+template<>
+inline int Bits::PopCount(unsigned long v) {
+  return __builtin_popcountl(v);
+}
+
+template<>
+inline int Bits::PopCount(unsigned long long v) {
+  return __builtin_popcountll(v);
+}
+
+template<class T>
+inline bool Bits::IsPow2(T v) {
+  return Bits::PopCount(v) == 1;
 }
 
 inline int Bits::FindLSBSetNonZero64(uint64_t n) {

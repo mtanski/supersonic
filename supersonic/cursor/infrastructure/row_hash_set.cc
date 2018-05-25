@@ -18,6 +18,7 @@
 #include "supersonic/utils/std_namespace.h"
 
 #include "supersonic/utils/integral_types.h"
+#include "supersonic/utils/bits.h"
 #include <glog/logging.h>
 #include "supersonic/utils/logging-inl.h"
 #include "supersonic/utils/macros.h"
@@ -202,6 +203,16 @@ unique_ptr<const BoundSingleSourceProjector> CreateAllAttributeSelector(
   return SucceedOrDie(projector->Bind(schema));
 }
 
+// Project everything if no selector is specified
+static
+unique_ptr<const BoundSingleSourceProjector>
+key_selector_or_default(unique_ptr<const BoundSingleSourceProjector> key_selector, const TupleSchema& schema) {
+  if ((bool) key_selector) {
+    return key_selector;
+  }
+  return CreateAllAttributeSelector(schema);
+}
+
 // For multiset. See equal_row_groups_.
 struct EqualRowGroup {
   rowid_t first;
@@ -214,10 +225,18 @@ struct EqualRowIdsLink {
   rowid_t next;
 };
 
+class RowHashSetBase {
+
+ protected:
+  // Computes the column of hashes for the 'key' view, given the row count.
+  // TODO(user): perhaps make the row_count part of the view?
+  static void HashQuery(const View& key, rowcount_t row_count, size_t* hash);
+};
+
 // The actual row hash set implementation.
 // TODO(user): replace vectors and scoped_arrays with Tables, to close the
 // loop on memory management.
-class RowHashSetImpl {
+class RowHashSetImpl final: public RowHashSetBase {
  public:
   RowHashSetImpl(
       const TupleSchema& block_schema,
@@ -258,10 +277,6 @@ class RowHashSetImpl {
   void FindInternal(
       const View& query, const bool_const_ptr selection_vector,
       rowid_t* result_row_ids) const;
-
-  // Computes the column of hashes for the 'key' view, given the row count.
-  // TODO(user): perhaps make the row_count part of the view?
-  static void HashQuery(const View& key, rowcount_t row_count, size_t* hash);
 
   // Selects key columns from index_ and from queries to Insert.
   std::unique_ptr<const BoundSingleSourceProjector> key_selector_;
@@ -324,15 +339,114 @@ class RowHashSetImpl {
   friend class RowIdSetIterator;
 };
 
-// Project everything if no selector is specified
-static
-unique_ptr<const BoundSingleSourceProjector>
-key_selector_or_default(unique_ptr<const BoundSingleSourceProjector> key_selector, const TupleSchema& schema) {
-  if ((bool) key_selector) {
-    return key_selector;
-  }
-  return CreateAllAttributeSelector(schema);
-}
+class RowHashSetUniqueImpl final : public RowHashSetBase {
+ public:
+  RowHashSetUniqueImpl(
+      const TupleSchema& block_schema,
+      BufferAllocator* const allocator,
+      unique_ptr<const BoundSingleSourceProjector> key_selector,
+      bool is_multiset,
+      const int64_t max_unique_keys_in_result)
+      : key_selector_(key_selector_or_default(std::move(key_selector), block_schema)),
+        index_(block_schema, allocator),
+        index_appender_(&index_, true),
+        index_key_(key_selector_->result_schema()),
+        query_key_(key_selector_->result_schema()),
+        comparator_(query_key_.schema()),
+        max_unique_keys_in_result_(max_unique_keys_in_result) { }
+
+  void FindUnique(
+      const View& query, const bool_const_ptr selection_vector,
+      FindResult* result) const;
+
+  // RowSet variant.
+  size_t InsertUnique(
+      const View& query, const bool_const_ptr selection_vector,
+      FindResult* result);
+
+  bool ReserveRowCapacity(rowcount_t block_capacity);
+
+  void Clear();
+
+  void Compact();
+
+  const View& indexed_view() const { return index_.view(); }
+
+ private:
+  // Load factor is scaled to 0 -> INT_MAX
+  constexpr static int MaxLoadFactor = (int) (0.75f * INT_MAX);
+
+  struct HashTable {
+    constexpr static int MinSize = 16;
+    constexpr static int SearchDistance = 12;
+
+    int factor_ = 0;
+
+    // Bucket count (plus overhang for linear prob at end)
+    int num_buckets_ = 0;
+
+    // Bit mask used for calculating bucket count index.
+    int mask_ = 0;
+
+    int values_ = 0;
+
+    unique_ptr<size_t[]> buckets_;
+    unique_ptr<int[]> offsets_;
+
+    HashTable(rowcount_t buckets = MinSize) {
+      DCHECK(buckets == 0 || Bits::IsPow2(buckets)) << "Not a power of 2";
+
+      if (buckets == 0) {
+        return;
+      }
+
+      factor_ = buckets;
+      num_buckets_ = buckets + SearchDistance;
+      mask_ = factor_ - 1;
+
+      buckets_ = make_unique<size_t[]>(num_buckets_);
+      offsets_ = make_unique<int[]>(num_buckets_);
+
+      std::fill(offsets_.get(), offsets_.get() + num_buckets_, -1);
+    }
+  };
+
+ private:
+  inline bool ResizeHash(rowcount_t rowcount);
+  inline int InsertHash(HashTable& where, size_t hash, int pos);
+
+  // Selects key columns from index_ and from queries to Insert.
+  std::unique_ptr<const BoundSingleSourceProjector> key_selector_;
+
+  // Contains all inserted rows; Find and Insert match against these rows
+  // using last_row_id_ and prev_row_id_.
+  Table index_;
+
+  TableRowAppender<DirectRowSourceReader<ViewRowIterator> > index_appender_;
+
+  // View over the index's key columns. Contains keys of all the rows inserted
+  // into the index.
+  View index_key_;
+
+  // View over key columns of a query to insert.
+  View query_key_;
+
+  HashTable hash_table_;
+
+  // Structure used for comparing rows.
+  mutable RowComparator comparator_;
+
+  // Placeholder for hash values calculated in one go over entire query to
+  // find/insert.
+  mutable size_t query_hash_[Cursor::kDefaultRowCount];
+
+  const int64_t max_unique_keys_in_result_;
+
+  friend class RowIdSetIterator;
+};
+
+constexpr int RowHashSetUniqueImpl::HashTable::MinSize;
+
 
 RowHashSetImpl::RowHashSetImpl(
     const TupleSchema& block_schema,
@@ -622,7 +736,7 @@ void RowHashSetImpl::Compact() {
   vector<EqualRowGroup>(equal_row_groups_).swap(equal_row_groups_);
 }
 
-void RowHashSetImpl::HashQuery(
+void RowHashSetBase::HashQuery(
     const View& key_columns, rowcount_t row_count, size_t* hash) {
   const TupleSchema& key_schema = key_columns.schema();
   // TODO(user): this should go into the constructor.
@@ -642,33 +756,298 @@ void RowHashSetImpl::HashQuery(
   }
 }
 
+void RowHashSetUniqueImpl::Clear() {
+  // Be more aggresive in freeing memory. Otherwise clients like
+  // BestEffortGroupAggregate may end up with memory_limit->Available() == 0
+  // after clearing RowHashSet.
+  index_.move_block();
+  key_selector_->Project(index_.view(), &index_key_);
+  hash_table_ = HashTable(0);
+}
+
+void RowHashSetUniqueImpl::Compact() {
+  index_.Compact();
+}
+
+bool RowHashSetUniqueImpl::ReserveRowCapacity(rowcount_t row_count) {
+  // Resize output hashset (if needed)
+  if (index_.row_capacity() < row_count) {
+    if (!index_.ReserveRowCapacity(row_count)) {
+      return false;
+    }
+
+    // Reset state after changing (reallocating) index_
+    key_selector_->Project(index_.view(), &index_key_);
+    comparator_.set_right_view(&index_key_);
+  }
+
+  int spill_at = (hash_table_.factor_ * 3) / 4;
+
+  // TODO: Should we resize hash table (pass fill factor)
+  if (hash_table_.factor_ == 0 || hash_table_.values_ > spill_at) {
+    auto at_least = std::max(HashTable::MinSize, hash_table_.factor_ * 2);
+    return ResizeHash(at_least);
+  }
+
+  return true;
+}
+
+void RowHashSetUniqueImpl::FindUnique(
+    const View& query, const bool_const_ptr selection_vector,
+    FindResult* result) const {
+
+  DCHECK(query.schema().EqualByType(key_selector_->result_schema()));
+  CHECK_GE(arraysize(query_hash_), query.row_count());
+  comparator_.set_left_view(&query);
+
+  HashQuery(query, query.row_count(), query_hash_);
+  ViewRowIterator iterator(query);
+
+  while (iterator.next()) {
+    const rowid_t query_row_id = iterator.current_row_index();
+    const auto row_hash = query_hash_[query_row_id];
+
+    auto result_row_id = result->mutable_row_ids() + query_row_id;
+
+    if (selection_vector != NULL && !selection_vector[query_row_id]) {
+      *result_row_id = kInvalidRowId;
+      continue;
+    }
+
+    int hash_index = (hash_table_.mask_ & query_hash_[query_row_id]);
+
+    // Default to Not found
+    *result_row_id = kInvalidRowId;
+
+    if (comparator_.hash_comparison_only()) {
+      for (int probe_off = 0; probe_off < HashTable::SearchDistance;
+           probe_off += 1)
+      {
+        auto hash_off = hash_index + probe_off;
+        auto idx_off = hash_table_.offsets_[hash_off];
+
+        // Empty bucket / less then maximum limit (we can insert here)
+        if (idx_off == -1) break;
+
+        // FOUND MATCH
+        if (hash_table_.buckets_[hash_off] == row_hash) {
+          *result_row_id = idx_off;
+          break;
+        }
+      }
+    } else {
+      for (int probe_off = 0; probe_off < HashTable::SearchDistance;
+           probe_off += 1)
+      {
+        auto hash_off = hash_index + probe_off;
+        auto idx_off = hash_table_.offsets_[hash_off];
+
+        // Empty bucket / less then maximum limit (we can insert here)
+        if (idx_off == -1) break;
+
+        // FOUND MATCH
+        if (hash_table_.buckets_[hash_off] == row_hash
+            && comparator_.Equal(query_row_id, idx_off))
+        {
+          *result_row_id = idx_off;
+          break;
+        }
+      }
+    }
+  }
+}
+
+int RowHashSetUniqueImpl::InsertHash(RowHashSetUniqueImpl::HashTable& where,
+                                     size_t hash, int pos)
+{
+  auto v = where.mask_ & hash;
+
+  for (int i = v; (i - v) < HashTable::SearchDistance; i += 1) {
+    if (where.offsets_[i] == -1) {
+      where.buckets_[i] = hash;
+      where.offsets_[i] = pos;
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+bool RowHashSetUniqueImpl::ResizeHash(rowcount_t rowcount) {
+  // TODO: Resize based estimated spill
+
+  if (rowcount < HashTable::MinSize) rowcount = HashTable::MinSize;
+  // IGNORE resizes down
+  if (rowcount < hash_table_.factor_) return true;
+
+  bool copy_old = (hash_table_.num_buckets_ > 0);
+
+  if (!copy_old) {
+    hash_table_ = HashTable(rowcount);
+  }
+
+  while (true) {
+    HashTable output(rowcount);
+
+    auto old_buckets = hash_table_.buckets_.get();
+    auto old_offsets = hash_table_.offsets_.get();
+
+    for (int i = 0; i < hash_table_.num_buckets_; i += 1) {
+      if (old_offsets[i] == -1) continue;
+
+      if (InsertHash(output, old_buckets[i], old_offsets[i]) == -1) {
+        // TODO: Use different seed
+        // TODO: Log / warn
+        // Resize because we exhausted our probe for free spot
+        rowcount *= 2;
+        continue;
+      }
+    }
+
+    break;
+  }
+
+  return true;
+}
+
+size_t RowHashSetUniqueImpl::InsertUnique(
+    const View& query, const bool_const_ptr selection_vector,
+    FindResult* result)
+{
+  DCHECK(query.schema().EqualByType(index_.schema()))
+    << "Expected: " << index_.schema().GetHumanReadableSpecification()
+    << ", is: " << query.schema().GetHumanReadableSpecification();
+
+  // Best-effort; if fails, we may end up adding less rows later.
+  ReserveRowCapacity(index_.row_count() + query.row_count());
+  CHECK_GE(arraysize(query_hash_), query.row_count());
+
+  key_selector_->Project(query, &query_key_);
+  HashQuery(query_key_, query.row_count(), query_hash_);
+  comparator_.set_left_view(&query_key_);
+
+  ViewRowIterator iterator(query);
+
+  while (iterator.next()) {
+  retry_row:
+
+    const int64_t query_row_id = iterator.current_row_index();
+    const auto row_hash = query_hash_[query_row_id];
+
+    rowid_t* const result_row_id =
+        result ? (result->mutable_row_ids() + query_row_id) : NULL;
+
+    if (selection_vector != NULL && !selection_vector[query_row_id]) {
+      if (result_row_id) {
+        *result_row_id = kInvalidRowId;
+      }
+      continue;
+    }
+
+    auto set_output_row = [&](int idx_off) {
+      if (result_row_id) {
+        *result_row_id = idx_off;
+      }
+    };
+
+    int hash_index = (hash_table_.mask_ & query_hash_[query_row_id]);
+    int probe_off = 0;
+
+    if (comparator_.hash_comparison_only()) {
+      for (; probe_off < HashTable::SearchDistance; probe_off += 1) {
+        auto hash_off = hash_index + probe_off;
+        auto idx_off = hash_table_.offsets_[hash_off];
+
+        // Empty bucket / less then maximum limit (we can insert here)
+        if (idx_off == -1) break;
+
+        // FOUND MATCH
+        if (hash_table_.buckets_[hash_off] == row_hash) {
+          set_output_row(idx_off);
+          goto next;
+        }
+      }
+    } else {
+      for (; probe_off < HashTable::SearchDistance; probe_off += 1) {
+        auto hash_off = hash_index + probe_off;
+        auto idx_off = hash_table_.offsets_[hash_off];
+
+        // Empty bucket / less then maximum limit (we can insert here)
+        if (idx_off == -1) break;
+
+        // FOUND MATCH
+        if (hash_table_.buckets_[hash_off] == row_hash
+            && comparator_.Equal(query_row_id, idx_off))
+        {
+          set_output_row(idx_off);
+          goto next;
+        }
+      }
+    }
+
+    // LIMIT, maximum number of groupings reached
+    if (index_.row_count() > max_unique_keys_in_result_) {
+      set_output_row(index_.row_count() - 1);
+      continue;
+    }
+
+    // RUN TOO LONG, resize and retry this row
+    if (probe_off > HashTable::SearchDistance) {
+      ResizeHash(hash_table_.factor_ * 2);
+      goto retry_row;
+    }
+
+    // FOUND SLOT
+    {
+      auto hash_off = hash_index + probe_off;
+      auto idx_off = index_.row_count();
+      hash_table_.buckets_[hash_off] = row_hash;
+      hash_table_.offsets_[hash_off] = idx_off;
+
+      // EOM when adding new output row
+      if (!index_appender_.AppendRow(iterator)) {
+        // Return partially done
+        break;
+      }
+
+      set_output_row(idx_off);
+      hash_table_.values_ += 1;
+    }
+
+    next:
+      ;
+  }
+
+  return iterator.current_row_index();
+}
+
 void RowIdSetIterator::Next() {
   current_ = equal_row_ids_[current_].next;
 }
 
 RowHashSet::RowHashSet(const TupleSchema& block_schema,
                        BufferAllocator* const allocator)
-    : impl_(new RowHashSetImpl(block_schema, allocator, NULL, false,
+    : impl_(new RowHashSetUniqueImpl(block_schema, allocator, NULL, false,
                                INT64_MAX)) {}
 
 RowHashSet::RowHashSet(
     const TupleSchema& block_schema,
     BufferAllocator* const allocator,
     unique_ptr<const BoundSingleSourceProjector> key_selector)
-    : impl_(new RowHashSetImpl(block_schema, allocator, std::move(key_selector), false,
+    : impl_(new RowHashSetUniqueImpl(block_schema, allocator, std::move(key_selector), false,
                                INT64_MAX)) {}
 
 RowHashSet::RowHashSet(const TupleSchema &block_schema,
                        BufferAllocator *const allocator,
                        const int64_t max_unique_keys_in_result)
-    : impl_(new RowHashSetImpl(block_schema, allocator, NULL, false,
+    : impl_(new RowHashSetUniqueImpl(block_schema, allocator, NULL, false,
                                max_unique_keys_in_result)) {}
 
 RowHashSet::RowHashSet(
     const TupleSchema &block_schema, BufferAllocator *const allocator,
     unique_ptr<const BoundSingleSourceProjector> key_selector,
     const int64_t max_unique_keys_in_result)
-    : impl_(new RowHashSetImpl(block_schema, allocator, std::move(key_selector),
+    : impl_(new RowHashSetUniqueImpl(block_schema, allocator, std::move(key_selector),
                                false, max_unique_keys_in_result)) {}
 
 RowHashSet::~RowHashSet() {

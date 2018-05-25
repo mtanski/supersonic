@@ -39,6 +39,7 @@ static const rowid_t kInvalidRowId = -1;
 class FindMultiResult;
 class FindResult;
 class RowHashSetImpl;
+class RowHashSetUniqueImpl;
 
 // A row container that stores rows in an internal storage block (defined by
 // a schema passed in constructor) and groups rows with identical keys together.
@@ -142,7 +143,7 @@ class RowHashSet {
   rowcount_t size() const;
 
  private:
-  RowHashSetImpl* impl_;
+  RowHashSetUniqueImpl* impl_;
 };
 
 class RowHashMultiSet {
@@ -249,6 +250,7 @@ class FindResult {
   rowcount_t row_ids_size_;
 
   friend class RowHashSetImpl;
+  friend class RowHashSetUniqueImpl;
 };
 
 
