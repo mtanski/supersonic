@@ -573,8 +573,7 @@ unique_ptr<Operation> AbstractTestDataBuilder::OverwriteNamesAndBuild(
 // Builds a cursor over the stream.
 // Ownership of the result is passed to the caller.
 unique_ptr<Cursor> AbstractTestDataBuilder::BuildCursor() const {
-  return unique_ptr<Cursor>(
-    SucceedOrDie(TurnIntoCursor(Build())));
+    return SucceedOrDie(TurnIntoCursor(Build()));
 }
 
 // Builds a cursor over the stream.
@@ -582,7 +581,7 @@ unique_ptr<Cursor> AbstractTestDataBuilder::BuildCursor() const {
 // Ownership of the result is passed to the caller.
 unique_ptr<Cursor> AbstractTestDataBuilder::BuildCursor(const vector<string>& names)
     const {
-    SucceedOrDie(TurnIntoCursor(OverwriteNamesAndBuild(names)));
+    return SucceedOrDie(TurnIntoCursor(OverwriteNamesAndBuild(names)));
 }
 
 unique_ptr<Cursor> RenameAttributesInCursorAs(const vector<string>& new_names,

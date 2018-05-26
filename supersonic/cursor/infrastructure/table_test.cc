@@ -33,25 +33,30 @@ namespace supersonic {
 // Table, as TestDataBuilder actually uses Table to represent it's data.
 
 TEST(TableCursorTest, SimpleData) {
-  Table table(TupleSchema::Merge(
+  Table table(
+    TupleSchema::Merge(
       TupleSchema::Singleton("col0", INT32, NULLABLE),
       TupleSchema::Singleton("col1", STRING, NULLABLE)),
-              HeapBufferAllocator::Get());
+    HeapBufferAllocator::Get());
+
   TableRowWriter writer(&table);
   writer.AddRow().Int32(1).String("a")
         .AddRow().Int32(3).String("b")
         .AddRow().Null().Null();
-  ASSERT_TRUE(writer.success());
-  std::unique_ptr<Cursor> table_cursor(SucceedOrDie(table.CreateCursor()));
 
-  std::unique_ptr<Cursor> expected_output(TestDataBuilder<INT32, STRING>()
-                                              .AddRow(1, "a")
-                                              .AddRow(3, "b")
-                                              .AddRow(__, __)
-                                              .BuildCursor());
+  ASSERT_TRUE(writer.success());
+
+  auto table_cursor = SucceedOrDie(table.CreateCursor());
+  auto expected_output = TestDataBuilder<INT32, STRING>()
+      .AddRow(1, "a")
+      .AddRow(3, "b")
+      .AddRow(__, __)
+      .BuildCursor();
+
   EXPECT_TUPLE_SCHEMAS_EQUAL(
       expected_output->schema(),
       table_cursor->schema());
+
   EXPECT_CURSORS_EQUAL(std::move(expected_output), std::move(table_cursor));
 }
 

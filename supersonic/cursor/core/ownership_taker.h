@@ -86,7 +86,7 @@ namespace internal {
 }
 
 template<typename... Owned>
-unique_ptr<Cursor> TakeOwnership(unique_ptr<Cursor>&& child, Owned&&... args) {
+unique_ptr<Cursor> TakeOwnership(unique_ptr<Cursor> child, Owned&&... args) {
   auto linked_pairs = internal::linked_pair(std::forward<Owned>(args)...);
   return OwnershipTaker<decltype(linked_pairs)>::Create(std::move(child), std::move(linked_pairs));
 }
@@ -100,7 +100,8 @@ inline FailureOrOwned<Cursor> TurnIntoCursor(unique_ptr<Operation> operation, Ow
   FailureOrOwned<Cursor> result = operation->CreateCursor();
   PROPAGATE_ON_FAILURE(result);
 
-  return Success(TakeOwnership(result.move(), std::forward<Owned>(args)...));
+  return Success(TakeOwnership(result.move(), std::move(operation),
+                               std::forward<Owned>(args)...));
 }
 
 }  // namespace supersonic

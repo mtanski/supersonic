@@ -16,17 +16,10 @@
 #ifndef SUPERSONIC_TESTING_OPERATION_TESTING_H_
 #define SUPERSONIC_TESTING_OPERATION_TESTING_H_
 
-#include <cstddef>
-
-#include <memory>
-#include <string>
-namespace supersonic {using std::string; }
-#include <vector>
-using std::vector;
-
 #include <glog/logging.h>
 #include "supersonic/utils/logging-inl.h"
 #include "supersonic/utils/macros.h"
+#include "supersonic/utils/std_namespace.h"
 #include "supersonic/base/exception/exception.h"
 #include "supersonic/base/exception/result.h"
 #include "supersonic/cursor/base/operation.h"
