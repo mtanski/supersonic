@@ -28,11 +28,11 @@ add_subdirectory(external/google-test)
 # Minimum instruction set needed
 set(INST_SET "-mmmx -msse -msse3 -msse3 -mssse3 -msse4 -msse4a -msse4.1 -msse4.2 -mpopcnt")
 
-set(CMAKE_C_FLAGS "${INST_SET} -funsigned-char")
-set(CMAKE_CXX_FLAGS "${INST_SET} -funsigned-char")
+set(CMAKE_C_FLAGS "${INST_SET} -funsigned-char -O3")
+set(CMAKE_CXX_FLAGS "${INST_SET} -funsigned-char -O3")
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Og")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
+set(CMAKE_C_FLAGS_DEBUG "${INST_SET} -funsigned-char -Og -g")
+set(CMAKE_CXX_FLAGS_DEBUG "${INST_SET} -funsigned-char -Og -g")
 
 
 FUNCTION (proto_gen OUT_DIR PROTO_FILE)
@@ -693,6 +693,7 @@ add_library(supersonic_benchmark
     supersonic/benchmark/manager/benchmark_manager.cc
 )
 
+add_sanitizers(supersonic_benchmark)
 target_link_libraries(supersonic_benchmark supersonic_testutils)
 add_dependencies(test_expression_vector supersonic_testutils)
 
@@ -702,6 +703,7 @@ add_executable(operation_example
     supersonic/benchmark/examples/operation_example.cc
 )
 
+add_sanitizers(operation_example)
 target_link_libraries(operation_example supersonic_benchmark)
 add_dependencies(operation_example supersonic_benchmark)
 
