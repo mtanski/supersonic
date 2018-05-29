@@ -373,12 +373,9 @@ class RowHashSetUniqueImpl final : public RowHashSetBase {
   const View& indexed_view() const { return index_.view(); }
 
  private:
-  // Load factor is scaled to 0 -> INT_MAX
-  constexpr static int MaxLoadFactor = (int) (0.75f * INT_MAX);
-
   struct HashTable {
-    constexpr static int MinSize = 16;
-    constexpr static int SearchDistance = 12;
+    constexpr static int MinSize = 128;
+    constexpr static int SearchDistance = 8;
 
     int factor_ = 0;
 
@@ -390,8 +387,13 @@ class RowHashSetUniqueImpl final : public RowHashSetBase {
 
     int values_ = 0;
 
-    unique_ptr<size_t[]> buckets_;
-    unique_ptr<int[]> offsets_;
+    // Store hashtable buckets and offsets in same block of memory
+    struct Stride {
+      size_t buckets[4];
+      int offsets[4];
+    };
+
+    unique_ptr<Stride[]> ht_;
 
     HashTable(rowcount_t buckets = MinSize) {
       DCHECK(buckets == 0 || Bits::IsPow2(buckets)) << "Not a power of 2";
@@ -404,11 +406,22 @@ class RowHashSetUniqueImpl final : public RowHashSetBase {
       num_buckets_ = buckets + SearchDistance;
       mask_ = factor_ - 1;
 
-      buckets_ = make_unique<size_t[]>(num_buckets_);
-      offsets_ = make_unique<int[]>(num_buckets_);
+      auto strides = (num_buckets_ + (4 - 1)) / 4;
+      ht_ = make_unique<Stride[]>(strides);
 
-      std::fill(offsets_.get(), offsets_.get() + num_buckets_, -1);
+      for (int i = 0; i < strides; i += 1) {
+        std::fill(&ht_[i].offsets[0], &ht_[i].offsets[4], -1);
+      }
     }
+
+    inline
+    std::pair<size_t*, int*> pair_at(int index) const {
+      // div 4
+      int major = index >> 2;
+      // mod 4
+      int minor = index & 0x3;
+      return { &ht_[major].buckets[minor], &ht_[major].offsets[minor] };
+    };
   };
 
  private:
@@ -783,7 +796,6 @@ bool RowHashSetUniqueImpl::ReserveRowCapacity(rowcount_t row_count) {
 
   int spill_at = (hash_table_.factor_ * 3) / 4;
 
-  // TODO: Should we resize hash table (pass fill factor)
   if (hash_table_.factor_ == 0 || hash_table_.values_ > spill_at) {
     auto at_least = std::max(HashTable::MinSize, hash_table_.factor_ * 2);
     return ResizeHash(at_least);
@@ -823,15 +835,15 @@ void RowHashSetUniqueImpl::FindUnique(
       for (int probe_off = 0; probe_off < HashTable::SearchDistance;
            probe_off += 1)
       {
-        auto hash_off = hash_index + probe_off;
-        auto idx_off = hash_table_.offsets_[hash_off];
+        int ht_pos = hash_index + probe_off;
+        auto hash_off = hash_table_.pair_at(ht_pos);
 
-        // Empty bucket / less then maximum limit (we can insert here)
-        if (idx_off == -1) break;
+        // empty bucket / less then maximum limit (we can insert here)
+        if (*hash_off.second == -1) break;
 
         // FOUND MATCH
-        if (hash_table_.buckets_[hash_off] == row_hash) {
-          *result_row_id = idx_off;
+        if (*hash_off.first == row_hash) {
+          *result_row_id = *hash_off.second;
           break;
         }
       }
@@ -839,17 +851,17 @@ void RowHashSetUniqueImpl::FindUnique(
       for (int probe_off = 0; probe_off < HashTable::SearchDistance;
            probe_off += 1)
       {
-        auto hash_off = hash_index + probe_off;
-        auto idx_off = hash_table_.offsets_[hash_off];
+        int ht_pos = hash_index + probe_off;
+        auto hash_off = hash_table_.pair_at(ht_pos);
 
-        // Empty bucket / less then maximum limit (we can insert here)
-        if (idx_off == -1) break;
+        // empty bucket / less then maximum limit (we can insert here)
+        if (*hash_off.second == -1) break;
 
         // FOUND MATCH
-        if (hash_table_.buckets_[hash_off] == row_hash
-            && comparator_.Equal(query_row_id, idx_off))
+        if (*hash_off.first == row_hash
+            && comparator_.Equal(query_row_id, *hash_off.second))
         {
-          *result_row_id = idx_off;
+          *result_row_id = *hash_off.second;
           break;
         }
       }
@@ -857,15 +869,18 @@ void RowHashSetUniqueImpl::FindUnique(
   }
 }
 
+inline
 int RowHashSetUniqueImpl::InsertHash(RowHashSetUniqueImpl::HashTable& where,
                                      size_t hash, int pos)
 {
   auto v = where.mask_ & hash;
 
   for (int i = v; (i - v) < HashTable::SearchDistance; i += 1) {
-    if (where.offsets_[i] == -1) {
-      where.buckets_[i] = hash;
-      where.offsets_[i] = pos;
+    auto hash_off = where.pair_at(i);
+
+    if (*hash_off.second == -1) {
+      *(hash_off.first) = hash;
+      *(hash_off.second) = pos;
       return i;
     }
   }
@@ -884,27 +899,30 @@ bool RowHashSetUniqueImpl::ResizeHash(rowcount_t rowcount) {
 
   if (!copy_old) {
     hash_table_ = HashTable(rowcount);
+    return true;
   }
 
   while (true) {
     HashTable output(rowcount);
 
-    auto old_buckets = hash_table_.buckets_.get();
-    auto old_offsets = hash_table_.offsets_.get();
-
     for (int i = 0; i < hash_table_.num_buckets_; i += 1) {
-      if (old_offsets[i] == -1) continue;
+      auto old_hash_off = hash_table_.pair_at(i);
 
-      if (InsertHash(output, old_buckets[i], old_offsets[i]) == -1) {
+      if (*old_hash_off.second == -1) continue;
+
+      if (InsertHash(output, *old_hash_off.first, *old_hash_off.second) == -1) {
         // TODO: Use different seed
         // TODO: Log / warn
         // Resize because we exhausted our probe for free spot
         rowcount *= 2;
-        continue;
+        goto retry;
       }
     }
 
+    hash_table_ = std::move(output);
     break;
+    retry:
+      ;
   }
 
   return true;
@@ -950,74 +968,73 @@ size_t RowHashSetUniqueImpl::InsertUnique(
       }
     };
 
-    int hash_index = (hash_table_.mask_ & query_hash_[query_row_id]);
+    int hash_index = (hash_table_.mask_ & row_hash);
     int probe_off = 0;
 
     if (comparator_.hash_comparison_only()) {
       for (; probe_off < HashTable::SearchDistance; probe_off += 1) {
-        auto hash_off = hash_index + probe_off;
-        auto idx_off = hash_table_.offsets_[hash_off];
+        int ht_pos = hash_index + probe_off;
+        auto hash_off = hash_table_.pair_at(ht_pos);
 
-        // Empty bucket / less then maximum limit (we can insert here)
-        if (idx_off == -1) break;
+        // empty bucket / less then maximum limit (we can insert here)
+        if (*hash_off.second == -1) break;
 
         // FOUND MATCH
-        if (hash_table_.buckets_[hash_off] == row_hash) {
-          set_output_row(idx_off);
-          goto next;
-        }
+        if (*hash_off.first == row_hash) break;
       }
     } else {
       for (; probe_off < HashTable::SearchDistance; probe_off += 1) {
-        auto hash_off = hash_index + probe_off;
-        auto idx_off = hash_table_.offsets_[hash_off];
+        int ht_pos = hash_index + probe_off;
+        auto hash_off = hash_table_.pair_at(ht_pos);
 
         // Empty bucket / less then maximum limit (we can insert here)
-        if (idx_off == -1) break;
+        if (*hash_off.second == -1) break;
 
         // FOUND MATCH
-        if (hash_table_.buckets_[hash_off] == row_hash
-            && comparator_.Equal(query_row_id, idx_off))
+        if (*hash_off.first == row_hash
+            && comparator_.Equal(query_row_id, *hash_off.second))
         {
-          set_output_row(idx_off);
-          goto next;
+          break;
         }
       }
     }
 
-    // LIMIT, maximum number of groupings reached
-    if (index_.row_count() > max_unique_keys_in_result_) {
-      set_output_row(index_.row_count() - 1);
-      continue;
-    }
+    if (probe_off < HashTable::SearchDistance) {
+      int ht_pos = hash_index + probe_off;
+      auto hash_off = hash_table_.pair_at(ht_pos);
 
-    // RUN TOO LONG, resize and retry this row
-    if (probe_off > HashTable::SearchDistance) {
+      if ((*hash_off.second) == -1) {
+        // LIMIT, maximum number of groupings reached
+        if (index_.row_count() > max_unique_keys_in_result_) {
+          set_output_row(index_.row_count() - 1);
+          continue;
+        }
+
+        // EOM when adding new output row
+        auto idx_row_id = index_.row_count();
+
+        if (idx_row_id  == index_.row_capacity() ||
+            !index_appender_.AppendRow(iterator))
+        {
+          // Return partially done
+          goto oom;
+        }
+
+        hash_table_.values_ += 1;
+
+        *(hash_off.first) = row_hash;
+        *(hash_off.second) = idx_row_id;
+      }
+
+      set_output_row(*hash_off.second);
+    } else {
+      // RUN TOO LONG, resize and retry this row
       ResizeHash(hash_table_.factor_ * 2);
       goto retry_row;
     }
-
-    // FOUND SLOT
-    {
-      auto hash_off = hash_index + probe_off;
-      auto idx_off = index_.row_count();
-      hash_table_.buckets_[hash_off] = row_hash;
-      hash_table_.offsets_[hash_off] = idx_off;
-
-      // EOM when adding new output row
-      if (!index_appender_.AppendRow(iterator)) {
-        // Return partially done
-        break;
-      }
-
-      set_output_row(idx_off);
-      hash_table_.values_ += 1;
-    }
-
-    next:
-      ;
   }
 
+oom:
   return iterator.current_row_index();
 }
 
