@@ -22,13 +22,8 @@
 #ifndef SUPERSONIC_BASE_INFRASTRUCTURE_TYPES_INFRASTRUCTURE_H_
 #define SUPERSONIC_BASE_INFRASTRUCTURE_TYPES_INFRASTRUCTURE_H_
 
-#include <cstddef>
-#include <cstring>
 
-#include <algorithm>
 #include "supersonic/utils/std_namespace.h"
-#include <string>
-namespace supersonic {using std::string; }
 
 #include <glog/logging.h>
 #include "supersonic/utils/logging-inl.h"
@@ -43,6 +38,8 @@ namespace supersonic {using std::string; }
 #include "supersonic/proto/supersonic.pb.h"
 #include "supersonic/utils/strings/join.h"
 #include "supersonic/utils/strings/stringpiece.h"
+
+#include <boost/functional/hash.hpp>
 
 namespace supersonic {
 
@@ -429,7 +426,12 @@ struct ColumnHashComputer {
       // We rely on the compiler to precompute the condition, so there will
       // be no branching here.
       if (!is_not_null && is_null != NULL) ++is_null;
-      hashes[i] = update ? hashes[i] * 29 + item_hash : item_hash;
+      // hashes[i] = update ? hashes[i] * 29 + item_hash : item_hash;
+      if (update) {
+        boost::hash_combine(hashes[i], item_hash);
+      } else {
+        hashes[i] = item_hash;
+      }
     }
   }
 };
